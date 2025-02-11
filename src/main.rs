@@ -17,5 +17,11 @@ fn main() {
         bitcoin::ExprParser::new()
             .parse("-1+2-(4+7)+(7-4)")
             .unwrap()
+    );
+
+    println!(
+        "{:?}",
+        bitcoin::EqlParser::new().parse(r#"z = "x y z""#).unwrap()
     )
+
 }
