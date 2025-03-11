@@ -8,12 +8,13 @@ pub Script: Vec<String> = {
 
 pub Statement: String = {
     <d:VarDeclarationStatement> => "(".to_owned() + &d.0 + ", " + &d.1 + ")",
-    <s:SymbolTable> => s,
     <e:ExprStatement> => e,
+    <v:VerifyStatement> => "(".to_owned() + "verify, " + &v + ")",
 }
 
 VarDeclarationStatement: (String, String) = "let" <Identifier> "=" <Expr> ";" => (<>).into();
 ExprStatement: String = <Expr> ";" => (<>).into();
+VerifyStatement: String = "verify" <StringLiteral> ";" => (<>).into();
 
 pub Expr: String = {
     <l:Literal> => l,
