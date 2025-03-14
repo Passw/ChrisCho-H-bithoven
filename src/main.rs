@@ -84,7 +84,7 @@ fn main() {
                     let num = -1+2-(4+7)+(7-4);
                     let _private_z_123 = false;
                     verify "03_public_key";
-                    if !(2+3-4 <= 1) {
+                    if (2+3-4 <= 1) {
                         if 3-4 > 2 {
                             verify "02_public_key";
                         } else {

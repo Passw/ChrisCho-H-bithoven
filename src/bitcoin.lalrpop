@@ -36,9 +36,9 @@ pub Expr: String = {
 };
 
 // Support both OP_IF and OP_NOTIF
-
 ConditionExpr: bool = {
     "!" "(" <c:CompareExpr> ")" => !c,
+    "(" <c:CompareExpr> ")" => c, // to support js like syntax(while redundant)
     <c:CompareExpr> => c,
 }
 
