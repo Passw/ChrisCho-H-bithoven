@@ -55,30 +55,35 @@ CompareExpr: bool = {
 }
 
 MathExpr: i64 = {
-    <l:MathExpr> "+" <r:Term> => l + r,
-    <l:MathExpr> "-" <r:Term> => l - r,
-    <t:Term> => t,  // Important: This allows a Term to be an Expr
+    <l:MathExpr> "+" <r:MathTerm> => l + r,
+    <l:MathExpr> "-" <r:MathTerm> => l - r,
+    <t:MathTerm> => t,  // Important: This allows a Term to be an Expr
 };
 
-Term: i64 = {
-    <f:Factor> => f, // Important: This allows a Factor to be a Term
+// Might be redundant as not support multiplication/division
+MathTerm: i64 = {
+    <f:MathFactor> => f, // Important: This allows a Factor to be a Term
 };
 
-Factor: i64 = {
-     <i:Integer> => i,
-    "(" <e:MathExpr> ")" => e,
+MathFactor: i64 = {
+     <p:MathPrimary> => p,
     // Unary minus at the Integer level(Precedence of fixed strings exists)
     // LALRPOP prefers to find the longest match first. 
     // After that, if there are two matches of equal length, it prefers the fixed string
-    "-" <f:Factor> => {
+    "-" <p:MathPrimary> => {
        // Number is 32 bit sign magnitude int, except when used as locktime.
        // To determine whether locktime or not is beyond context-free grammar.
        // Can be addressed when context analysis done
-       if f > i32::MAX as i64 {
+       if p > i32::MAX as i64 {
            panic!("overflow")
        }
-       -f
+       -p
     }
+};
+
+MathPrimary: i64 = {
+    <i:Integer> => i,
+    "(" <e:MathExpr> ")" => e,
 };
 
 Integer: i64 = <s:r"[0-9]+"> => {
