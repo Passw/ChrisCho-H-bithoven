@@ -85,9 +85,14 @@ fn main() {
                     let _private_z_123 = false;
                     verify "03_public_key";
                     if !(2+3-4 <= 1) {
-                        verify "03_public_key";
+                        if 3-4 > 2 {
+                            verify "02_public_key";
+                        } else {
+                            verify "03_public_key";
+                        }
                     } else {
                         verify "03_public_key";
+                        push "nft";
                     } 
                 }
                 "#
