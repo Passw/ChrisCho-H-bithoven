@@ -104,6 +104,31 @@ fn main() {
             .unwrap()
     );
 
+    // bitcoin syntax as expr
+    println!(
+        "{:?}",
+        bitcoin::ScriptParser::new()
+            .parse(
+                r#"
+                let proved = verify "03_public_key";
+
+                if verify "03_public_key" == true {
+                    let digest = sha256 "abc";
+                    if sha256 "abc" == "digest" {
+                        push "data yeah go";
+                    } else {}
+                } else {}
+
+                if older 213 == true {
+                    if after 2131231 == true {
+                        push "data data";
+                    } else {}
+                } else {}
+                "#
+            )
+            .unwrap()
+    );
+
     // comment skip
     println!(
         "{:?}",

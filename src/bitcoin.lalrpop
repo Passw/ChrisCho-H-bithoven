@@ -11,12 +11,7 @@ pub Statement: String = {
     <e:ExprStatement> => e,
     <i:IfStatement> => format!("(control, {})", <>),
     <b:BlockStatement> => format!("(block, {})", <>),
-    <v:VerifyStatement> => format!("(verify, {})", <>),
     <p:PushDataStatement> => format!("(push, {})", <>),
-    <a:AfterStatement> => format!("(after, {})", <>),
-    <o:OlderStatement> => format!("(older, {})", <>),
-    <a:Sha256Statement> => format!("(sha256, {})", <>),
-    <o:Ripemd160Statement> => format!("(ripemd160, {})", <>),
 }
 
 // No epsilon for Initalizer, don't neet to have Initializer rule
@@ -28,22 +23,28 @@ ExprStatement: String = <Expr> ";" => (<>).into();
 // reference2: https://bitcoin.stackexchange.com/questions/90868/does-bitcoin-script-support-nested-ifs-op-if-or-op-notif-inside-one-another
 IfStatement: String = "if" <ConditionExpr> <BlockStatement> "else" <BlockStatement> => format!("if {} {} else {}", <>);
 BlockStatement: String = "{" <s:Script> "}" => format!("[{}]", &s.join(", "));
-// Bitcoin specific language sytax. verify signature against public key
-VerifyStatement: String = "verify" <StringLiteral> ";" => (<>).into();
 // Bitcoin specific language sytax. push data to stack. can be replaced [].push() later
 PushDataStatement: String = "push" <StringLiteral> ";" => (<>).into();
+
+// Bitcoin specific language sytax. verify signature against public key
+VerifyExpr: String = "verify" <StringLiteral> => format!("(verify, {})", <>);
 // Bitcoin specific language sytax. OP_CLTV. inspired by miniscript syntax.
-AfterStatement: String = "after" <UnsignedInteger> ";" => (<>).to_string();
+AfterExpr: String = "after" <UnsignedInteger> => format!("(after, {})", <>);
 // Bitcoin specific language sytax. OP_CSV. inspired by miniscript syntax.
-OlderStatement: String = "older" <UnsignedInteger> ";" => (<>).to_string();
+OlderExpr: String = "older" <UnsignedInteger> => format!("(older, {})", <>);
 // Bitcoin specific language sytax. OP_SHA256. inspired by miniscript syntax.
-Sha256Statement: String = "sha256" <StringLiteral> ";" => (<>).to_string();
+Sha256Expr: String = "sha256" <StringLiteral> => format!("(sha256, {})", <>);
 // Bitcoin specific language sytax. OP_RIPEMD160. inspired by miniscript syntax.
-Ripemd160Statement: String = "ripemd160" <StringLiteral> ";" => (<>).to_string();
+Ripemd160Expr: String = "ripemd160" <StringLiteral> => format!("(ripemd160, {})", <>);
 
 
 pub Expr: String = {
-    <l:Literal> => l,
+    <Literal>,
+    <VerifyExpr>,
+    <AfterExpr>,
+    <OlderExpr>,
+    <Sha256Expr>,
+    <Ripemd160Expr>,
     <m:MathExpr> => m.to_string(),
 };
 
