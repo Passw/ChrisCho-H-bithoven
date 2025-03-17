@@ -21,7 +21,10 @@ ExprStatement: String = <Expr> ";" => (<>).into();
 // If statement follows semantics of bitcoin OP_(NOT)IF, OP_ELSE...
 // reference1: https://bitcoin.stackexchange.com/questions/103844/inner-working-of-op-if-and-op-else
 // reference2: https://bitcoin.stackexchange.com/questions/90868/does-bitcoin-script-support-nested-ifs-op-if-or-op-notif-inside-one-another
-IfStatement: String = "if" <ConditionExpr> <BlockStatement> "else" <BlockStatement> => format!("if {} {} else {}", <>);
+IfStatement: String = {
+    "if" <ConditionExpr> <BlockStatement> => format!("if {} {}", <>),
+    "if" <ConditionExpr> <BlockStatement> "else" <BlockStatement> => format!("if {} {} else {}", <>),
+};
 BlockStatement: String = "{" <s:Script> "}" => format!("[{}]", &s.join(", "));
 // Bitcoin specific language sytax. push data to stack. can be replaced [].push() later
 PushDataStatement: String = "push" <StringLiteral> ";" => (<>).into();
@@ -143,19 +146,6 @@ BinaryRelOp: String = {
     "<=" => "<=".to_string(),
     "&&" => "&&".to_string(),
     "||" => "||".to_string(),
-}
-
-SymbolTable: String = {
-    "if" => "if".to_string(),
-    "else" => "else".to_string(),
-    "for" => "for".to_string(),
-    "in" => "in".to_string(),
-    "let" => "let".to_string(),
-    "const" => "const".to_string(),
-    "static" => "static".to_string(),
-    "throw" => "throw".to_string(),
-    "function" => "function".to_string(),
-    "this" => "this".to_string(),
 }
 
 pub Comment: () = { 

@@ -116,14 +116,14 @@ fn main() {
                     let digest = sha256 "abc";
                     if sha256 "abc" == "digest" {
                         push "data yeah go";
-                    } else {}
-                } else {}
+                    }
+                }
 
                 if older 213 == true {
                     if after 2131231 == true {
                         push "data data";
-                    } else {}
-                } else {}
+                    }
+                }
                 "#
             )
             .unwrap()
