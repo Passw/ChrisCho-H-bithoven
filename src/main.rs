@@ -202,5 +202,6 @@ fn main() {
                 "#,
         )
         .unwrap();
-    println!("{:?}", tuple);
+    println!("stack: {:?}", tuple.0);
+    println!("ast: {:?}", tuple.1);
 }

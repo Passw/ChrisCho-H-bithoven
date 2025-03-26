@@ -72,7 +72,7 @@ pub Expr: String = {
 
 // Support both OP_IF and OP_NOTIF
 ConditionExpr: bool = {
-    "!" "(" <c:CompareExpr> ")" => !c,
+    <n:Not> "(" <c:CompareExpr> ")" => !c,
     "(" <c:CompareExpr> ")" => c, // to support js like syntax(while redundant)
     <c:CompareExpr> => c,
 }
@@ -81,17 +81,17 @@ ConditionExpr: bool = {
 // By separating CmpExpr, you can ensure that boolean operators (&&, ||) only operate on boolean values, 
 // and arithmetic operators (+, -, *, /) only operate on numeric values.
 CompareExpr: bool = {
-    <l:Expr> "==" <r:Expr> => l == r,
-    <l:Expr> "!=" <r:Expr> => l != r,
-    <l:Expr> ">"  <r:Expr> => l > r,
-    <l:Expr> ">=" <r:Expr> => l >= r,
-    <l:Expr> "<"  <r:Expr> => l < r,
-    <l:Expr> "<=" <r:Expr> => l <= r,
+    <l:Expr> <e:Equal> <r:Expr> => l == r,
+    <l:Expr> <n:NotEqual> <r:Expr> => l != r,
+    <l:Expr> <g:Greater>  <r:Expr> => l > r,
+    <l:Expr> <ge:GreaterOrEqual> <r:Expr> => l >= r,
+    <l:Expr> <less:Less>  <r:Expr> => l < r,
+    <l:Expr> <less_or_equal:LessOrEqual> <r:Expr> => l <= r,
 }
 
 MathExpr: i64 = {
-    <l:MathExpr> "+" <r:MathTerm> => l + r,
-    <l:MathExpr> "-" <r:MathTerm> => l - r,
+    <l:MathExpr> <p:Plus> <r:MathTerm> => l + r,
+    <l:MathExpr> <m:Minus> <r:MathTerm> => l - r,
     <t:MathTerm> => t,  // Important: This allows a Term to be an Expr
 };
 
@@ -105,7 +105,7 @@ MathFactor: i64 = {
     // Unary minus at the Integer level(Precedence of fixed strings exists)
     // LALRPOP prefers to find the longest match first. 
     // After that, if there are two matches of equal length, it prefers the fixed string
-    "-" <p:MathPrimary> => {
+    <m:Minus> <p:MathPrimary> => {
        // Number is 32 bit sign magnitude int, except when used as locktime.
        // To determine whether locktime or not is beyond context-free grammar.
        // Can be addressed when context analysis done
@@ -121,6 +121,11 @@ MathPrimary: i64 = {
     "(" <e:MathExpr> ")" => e,
 };
 
+// Below are Terminal(Token)
+
+
+Identifier: String = <v:r"[a-zA-Z_][a-zA-Z0-9_]*"> => v.into();
+
 UnsignedInteger: i64 = <s:r"[0-9]+"> => {
     let integer = i64::from_str(s).unwrap();
     // Number is 32 bit sign magnitude int, except when used as locktime.
@@ -133,8 +138,6 @@ UnsignedInteger: i64 = <s:r"[0-9]+"> => {
     }
 };
 
-Identifier: String = <v:r"[a-zA-Z_][a-zA-Z0-9_]*"> => v.into();
-
 Literal: String = {
     "true" => "true".to_string(),
     "false" => "false".to_string(),
@@ -143,10 +146,32 @@ Literal: String = {
 
 StringLiteral: String = <l:r#""(\\\\|\\"|[^"\\])*""#> => l[1..l.len()-1].into();
 
-Comma: String = {
-    "," => ",".to_string(),
-}
+// Binary Ops(Minus can be both Unary and Binary)
+Plus: String             = "+"  => "+".to_string();
+Minus: String            = "-"  => "-".to_string();
+Equal: String            = "==" => "==".to_string();
+NotEqual: String         = "!=" => "!=".to_string();
+Greater: String          = ">"  => ">".to_string();
+GreaterOrEqual: String   = ">=" => ">=".to_string();
+Less: String             = "<"  => "<".to_string();
+LessOrEqual: String      = "<=" => "<=".to_string();
+Assign: String           = "="  => "=".to_string();
+And: String              = "&&" => "&&".to_string();
+Or: String               = "||" => "||".to_string();
+// UnaryOps
+Not: String              = "!"  => "!".to_string();
+Negation: String         = "~"  => "~".to_string();
 
+// Puctuation
+Comma: String = "," => ",".to_string();
+SemiColon: String = ";" => ";".to_string();
+OpenParen: String = "(" => "(".to_string();
+CloseParen: String = ")" => "(".to_string();
+OpenBrace: String = "{" => "(".to_string();
+CloseBrace: String = "{" => "(".to_string();
+OpenBracket: String = "[" => "[".to_string();
+CloseBracket: String = "]" => "]".to_string();
+/*
 // Bitcoin integer is sign-magnitude integer.
 // Don't know need to differentiate yet.
 UnaryOp: String = {
@@ -170,7 +195,7 @@ BinaryRelOp: String = {
     "&&" => "&&".to_string(),
     "||" => "||".to_string(),
 }
-
+*/
 pub Comment: () = { 
     r"\s*" => { }, // The default whitespace skipping is disabled if an `ignore pattern` is specified
     r"//[^\n\r]*[\n\r]*" => { }, // Skip `// comments`
