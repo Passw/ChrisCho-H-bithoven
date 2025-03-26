@@ -121,30 +121,8 @@ MathPrimary: i64 = {
     "(" <e:MathExpr> ")" => e,
 };
 
-// Below are Terminal(Token)
-
-
-Identifier: String = <v:r"[a-zA-Z_][a-zA-Z0-9_]*"> => v.into();
-
-UnsignedInteger: i64 = <s:r"[0-9]+"> => {
-    let integer = i64::from_str(s).unwrap();
-    // Number is 32 bit sign magnitude int, except when used as locktime.
-    // To determine whether locktime or not is beyond context-free grammar.
-    // Can be addressed when context analysis done
-    if integer <= i32::MIN as i64 || integer > u32::MAX as i64 {
-        panic!("overflow")
-    } else {
-        integer
-    }
-};
-
-Literal: String = {
-    "true" => "true".to_string(),
-    "false" => "false".to_string(),
-    <string:StringLiteral> => string,
-}
-
-StringLiteral: String = <l:r#""(\\\\|\\"|[^"\\])*""#> => l[1..l.len()-1].into();
+// Below are Token
+// Terminal sequence in the context of lexer(tokenizer)
 
 // Binary Ops(Minus can be both Unary and Binary)
 Plus: String             = "+"  => "+".to_string();
@@ -171,6 +149,32 @@ OpenBrace: String = "{" => "(".to_string();
 CloseBrace: String = "{" => "(".to_string();
 OpenBracket: String = "[" => "[".to_string();
 CloseBracket: String = "]" => "]".to_string();
+
+// Below are terminals
+// Must be leaf node of AST
+
+Identifier: String = <v:r"[a-zA-Z_][a-zA-Z0-9_]*"> => v.into();
+
+UnsignedInteger: i64 = <s:r"[0-9]+"> => {
+    let integer = i64::from_str(s).unwrap();
+    // Number is 32 bit sign magnitude int, except when used as locktime.
+    // To determine whether locktime or not is beyond context-free grammar.
+    // Can be addressed when context analysis done
+    if integer <= i32::MIN as i64 || integer > u32::MAX as i64 {
+        panic!("overflow")
+    } else {
+        integer
+    }
+};
+
+Literal: String = {
+    "true" => "true".to_string(),
+    "false" => "false".to_string(),
+    <string:StringLiteral> => string,
+}
+
+StringLiteral: String = <l:r#""(\\\\|\\"|[^"\\])*""#> => l[1..l.len()-1].into();
+
 /*
 // Bitcoin integer is sign-magnitude integer.
 // Don't know need to differentiate yet.
