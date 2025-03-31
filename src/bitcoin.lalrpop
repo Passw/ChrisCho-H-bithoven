@@ -27,7 +27,6 @@ pub Statement: Statement = {
     <d:VarDeclarationStatement> => <>,
     <e:ExprStatement> => Statement::ExprStatement(e),
     <i:IfStatement> => <>,
-    <BlockStatement> => Statement::BlockStatement(<>), // Recursive call for nested blocks
     <p:PushDataStatement> => Statement::PushDataStatement(format!("(push, {})", <>)),
     <r:PanicStatement> => Statement::PanicStatement(format!("(panic, {})", <>)),
 }
