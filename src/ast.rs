@@ -48,6 +48,11 @@ pub enum Expression {
     CheckSigExpr(Box<Expression>),
     Sha256Expr(Box<Expression>),
     Ripemd160Expr(Box<Expression>),
+    MathExpression {
+        lhs: Box<Expression>,
+        op: BinaryMathOp,
+        rhs: Box<Expression>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -59,7 +64,7 @@ pub struct ConditionExpression {
 #[derive(Clone, Debug, PartialEq)]
 pub struct CompareExpression {
     pub lhs: Expression,
-    pub operator: BinaryCompareOp,
+    pub op: BinaryCompareOp,
     pub rhs: Expression,
 }
 
