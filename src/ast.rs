@@ -6,7 +6,7 @@ pub struct UTXO {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct StackParam {
-    pub identifier: String,
+    pub identifier: Identifier,
     pub ty: Type,
 }
 
@@ -21,10 +21,10 @@ pub enum Type {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Statement {
     VarDeclarationStatement {
-        identifier: String,
-        expr: String,
+        identifier: Identifier,
+        expr: Expression,
     },
-    ExprStatement(String),
+    ExprStatement(Expression),
     IfStatement {
         condition_expr: ConditionExpression,
         if_block: Vec<Statement>,
@@ -33,20 +33,21 @@ pub enum Statement {
     BlockStatement(Vec<Statement>),
     AfterStatement(u32),
     OlderStatement(u32),
-    VerifyStatement(String),
+    VerifyStatement(Expression),
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct Identifier(pub String);
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum Expression {
-    Variable(String),
+    Variable(Identifier),
     NumberLiteral(i64),
-    BoolLiteral(bool),
+    BooleanLiteral(bool),
     StringLiteral(String),
-    MathExpression {
-        lhs: Box<Expression>,
-        operator: BinaryMathOp,
-        rhs: Box<Expression>,
-    },
+    CheckSigExpr(Box<Expression>),
+    Sha256Expr(Box<Expression>),
+    Ripemd160Expr(Box<Expression>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -57,9 +58,9 @@ pub struct ConditionExpression {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CompareExpression {
-    pub lhs: String,
+    pub lhs: Expression,
     pub operator: BinaryCompareOp,
-    pub rhs: String,
+    pub rhs: Expression,
 }
 
 #[derive(Clone, Debug, PartialEq)]
