@@ -31,6 +31,11 @@ pub enum Statement {
         else_block: Option<Vec<Statement>>,
     },
     BlockStatement(Vec<Statement>),
+    BitcoinStatement(BitcoinStatement),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum BitcoinStatement {
     AfterStatement(u32),
     OlderStatement(u32),
     VerifyStatement(Expression),
@@ -45,14 +50,19 @@ pub enum Expression {
     NumberLiteral(i64),
     BooleanLiteral(bool),
     StringLiteral(String),
-    CheckSigExpr(BitcoinExprArgs),
-    Sha256Expr(BitcoinExprArgs),
-    Ripemd160Expr(BitcoinExprArgs),
     MathExpression {
         lhs: Box<Expression>,
         op: BinaryMathOp,
         rhs: Box<Expression>,
     },
+    BitcoinExpression(BitcoinExpression),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum BitcoinExpression {
+    CheckSigExpr(BitcoinExprArgs),
+    Sha256Expr(BitcoinExprArgs),
+    Ripemd160Expr(BitcoinExprArgs),
 }
 
 #[derive(Clone, Debug, PartialEq)]

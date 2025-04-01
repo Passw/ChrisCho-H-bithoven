@@ -36,9 +36,7 @@ pub MoreStackParams: StackParam = <c:Comma> <s:StackParam> => s;
 pub Statement: Statement = {
     <d:VarDeclarationStatement> => <>,
     <i:IfStatement> => <>,
-    <a:AfterStatement> => <>,
-    <o:OlderStatement> => <>,
-    <v:VerifyStatement> => <>,
+    <b:BitcoinStatement> => <>,
 }
 
 // No epsilon for Initalizer, don't neet to have Initializer rule
@@ -68,18 +66,26 @@ IfStatement: Statement = {
     },
 };
 BlockStatement: Vec<Statement> = "{" <s:Script> "}" => s;
+
+BitcoinStatement: Statement = {
+    <AfterStatement> => Statement::BitcoinStatement(<>),
+    <OlderStatement> => Statement::BitcoinStatement(<>),
+    <VerifyStatement> => Statement::BitcoinStatement(<>),
+}
+
+
 // Below statements don't produce value(so, not expression), just perform an action.
 // Bitcoin specific language sytax. OP_CLTV. inspired by miniscript syntax.
-AfterStatement: Statement = "after" <u:UnsignedInteger> <s:SemiColon> => {
-    Statement::AfterStatement(u as u32)
+AfterStatement: BitcoinStatement = "after" <u:UnsignedInteger> <s:SemiColon> => {
+    BitcoinStatement::AfterStatement(u as u32)
 };
 // Bitcoin specific language sytax. OP_CSV. inspired by miniscript syntax.
-OlderStatement: Statement = "older" <u:UnsignedInteger> <s:SemiColon> => {
-    Statement::OlderStatement(u as u32)
+OlderStatement: BitcoinStatement = "older" <u:UnsignedInteger> <s:SemiColon> => {
+    BitcoinStatement::OlderStatement(u as u32)
 };
 // Bitcoin specific language sytax. verify signature against public key
-VerifyStatement: Statement = "verify" <e:Expr> <s:SemiColon> => {
-    Statement::VerifyStatement(e)
+VerifyStatement: BitcoinStatement = "verify" <e:Expr> <s:SemiColon> => {
+    BitcoinStatement::VerifyStatement(e)
 };
 
 
@@ -88,9 +94,7 @@ pub Expr: Expression = {
     <BooleanLiteral> => Expression::BooleanLiteral(<>),
     <StringLiteral> => Expression::StringLiteral(<>),
     <NumberLiteral> => Expression::NumberLiteral(<>),
-    <CheckSigExpr>,
-    <Sha256Expr>,
-    <Ripemd160Expr>,
+    <BitcoinExpression>,
 };
 
 // Support both OP_IF and OP_NOTIF
@@ -138,13 +142,19 @@ MathExpr: Expression = {
     }
 };
 
+BitcoinExpression: Expression = {
+    <CheckSigExpr> => Expression::BitcoinExpression(<>),
+    <Sha256Expr> => Expression::BitcoinExpression(<>),
+    <Ripemd160Expr> => Expression::BitcoinExpression(<>),
+}
+
 // Below expressions produce value
 // Bitcoin specific language sytax. verify signature against public key
-CheckSigExpr: Expression = "checksig" <a:BitcoinExprArgs> => Expression::CheckSigExpr(a);
+CheckSigExpr: BitcoinExpression = "checksig" <a:BitcoinExprArgs> => BitcoinExpression::CheckSigExpr(a);
 // Bitcoin specific language sytax. OP_SHA256. inspired by miniscript syntax.
-Sha256Expr: Expression = "sha256" <a:BitcoinExprArgs> => Expression::Sha256Expr(a);
+Sha256Expr: BitcoinExpression = "sha256" <a:BitcoinExprArgs> => BitcoinExpression::Sha256Expr(a);
 // Bitcoin specific language sytax. OP_RIPEMD160. inspired by miniscript syntax.
-Ripemd160Expr: Expression = "ripemd160" <a:BitcoinExprArgs> => Expression::Ripemd160Expr(a);
+Ripemd160Expr: BitcoinExpression = "ripemd160" <a:BitcoinExprArgs> => BitcoinExpression::Ripemd160Expr(a);
 
 // Either variable or string
 pub BitcoinExprArgs: BitcoinExprArgs = {
