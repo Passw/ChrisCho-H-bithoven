@@ -122,8 +122,8 @@ fn main() {
                     }
                 }
 
-                if older 213 == true {
-                    if after 2131231 == true {
+                if 213 == true {
+                    if 2131231 == true {
                     }
                 }
                 "#
@@ -191,14 +191,10 @@ fn main() {
                 let pubkey_bob = "0245a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5212";
                 let secret = "secretRandomHex";
                 
-                if "first" == true {
-                    older 2576085;
-                    verify "pubkey_alice";
-                } else {
-                    if sha256 "secret" != sha256 "second" {
-                    }
-                    verify "pubkey_bob";   
-                }
+                older 2576085;
+                verify "pubkey_alice";
+                
+                if (sha256 "secret" != sha256 "second") {}
                 "#,
         )
         .unwrap();

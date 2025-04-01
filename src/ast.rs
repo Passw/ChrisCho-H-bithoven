@@ -31,6 +31,8 @@ pub enum Statement {
         else_block: Option<Vec<Statement>>,
     },
     BlockStatement(Vec<Statement>),
+    AfterStatement(u32),
+    OlderStatement(u32),
 }
 
 #[derive(Clone, Debug, PartialEq)]

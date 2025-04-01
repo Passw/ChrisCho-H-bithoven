@@ -35,8 +35,10 @@ pub MoreStackParams: StackParam = <c:Comma> <s:StackParam> => s;
 
 pub Statement: Statement = {
     <d:VarDeclarationStatement> => <>,
-    <e:ExprStatement> => Statement::ExprStatement(e),
+    <e:ExprStatement> => <>,
     <i:IfStatement> => <>,
+    <a:AfterStatement> => <>,
+    <o:OlderStatement> => <>,
 }
 
 // No epsilon for Initalizer, don't neet to have Initializer rule
@@ -47,7 +49,9 @@ VarDeclarationStatement: Statement = "let" <i:Identifier> "=" <e:Expr> ";" => {
     }
 };
 // Need to have expression statement to avoid conflict of shift-reduce
-ExprStatement: String = <Expr> ";" => (<>).into();
+ExprStatement: Statement = <e:Expr> ";" => {
+    Statement::ExprStatement(e)
+};
 // If statement follows semantics of bitcoin OP_(NOT)IF, OP_ELSE...
 // reference1: https://bitcoin.stackexchange.com/questions/103844/inner-working-of-op-if-and-op-else
 // reference2: https://bitcoin.stackexchange.com/questions/90868/does-bitcoin-script-support-nested-ifs-op-if-or-op-notif-inside-one-another
@@ -68,16 +72,21 @@ IfStatement: Statement = {
     },
 };
 BlockStatement: Vec<Statement> = "{" <s:Script> "}" => s;
+// Bitcoin specific language sytax. OP_CLTV. inspired by miniscript syntax.
+AfterStatement: Statement = "after" <u:UnsignedInteger> <s:SemiColon> => {
+    Statement::AfterStatement(u as u32)
+};
+// Bitcoin specific language sytax. OP_CSV. inspired by miniscript syntax.
+OlderStatement: Statement = "older" <u:UnsignedInteger> <s:SemiColon> => {
+    Statement::OlderStatement(u as u32)
+};
 /*
 // Bitcoin specific language sytax. push data to stack. can be replaced [].push() later
 PushDataStatement: String = "push" <Literal> ";" => (<>).into();
 */
+
 // Bitcoin specific language sytax. verify signature against public key
 VerifyExpr: String = "verify" <StringLiteral> => format!("(verify, {})", <>);
-// Bitcoin specific language sytax. OP_CLTV. inspired by miniscript syntax.
-AfterExpr: String = "after" <UnsignedInteger> => format!("(after, {})", <>);
-// Bitcoin specific language sytax. OP_CSV. inspired by miniscript syntax.
-OlderExpr: String = "older" <UnsignedInteger> => format!("(older, {})", <>);
 // Bitcoin specific language sytax. OP_SHA256. inspired by miniscript syntax.
 Sha256Expr: String = "sha256" <StringLiteral> => format!("(sha256, {})", <>);
 // Bitcoin specific language sytax. OP_RIPEMD160. inspired by miniscript syntax.
@@ -87,8 +96,6 @@ Ripemd160Expr: String = "ripemd160" <StringLiteral> => format!("(ripemd160, {})"
 pub Expr: String = {
     <Literal>,
     <VerifyExpr>,
-    <AfterExpr>,
-    <OlderExpr>,
     <Sha256Expr>,
     <Ripemd160Expr>,
     <m:MathExpr> => m.to_string(),
