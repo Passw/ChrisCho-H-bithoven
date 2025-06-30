@@ -33,9 +33,14 @@ pub enum Statement {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum BitcoinStatement {
-    AfterStatement(u32),
-    OlderStatement(u32),
+    LocktimeStatement { operand: u32, op: LocktimeOp },
     VerifyStatement(Expression),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct LocktimeStatement {
+    pub operand: u32,
+    pub op: LocktimeOp,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -53,7 +58,10 @@ pub enum Expression {
         op: BinaryMathOp,
         rhs: Box<Expression>,
     },
-    BitcoinExpression(BitcoinExpression),
+    CryptoExpression {
+        operand: CryptoOperand,
+        op: CryptoOp,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -64,21 +72,20 @@ pub enum LiteralExpression {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum BitcoinExpression {
-    CheckSigExpr(BitcoinExprArgs),
-    Sha256Expr(BitcoinExprArgs),
-    Ripemd160Expr(BitcoinExprArgs),
+pub struct CryptoExpression {
+    pub operand: CryptoOperand,
+    pub op: CryptoOp,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum BitcoinExprArgs {
+pub enum CryptoOperand {
     Variable(Identifier),
     StringLiteral(String),
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ConditionExpression {
-    pub negate: bool,
+    pub unary: Option<UnaryMathOp>,
     pub compare_expr: CompareExpression,
 }
 
@@ -100,7 +107,31 @@ pub enum BinaryCompareOp {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum UnaryMathOp {
+    Add,
+    Sub,
+    Negate,
+    Abs,
+    Not,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum BinaryMathOp {
     Add,
     Sub,
+    Max,
+    Min,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum CryptoOp {
+    CheckSig,
+    Sha256,
+    Ripemd160,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum LocktimeOp {
+    Cltv,
+    Csv,
 }

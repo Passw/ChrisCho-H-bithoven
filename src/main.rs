@@ -1,8 +1,10 @@
-use std::{collections::HashMap};
+use std::{collections::HashMap, string};
 
 pub mod ast;
+pub mod compile;
 
 use ast::*;
+use compile::*;
 use lalrpop_util::lalrpop_mod;
 
 lalrpop_mod!(pub bitcoin); // synthesized by LALRPOP
@@ -183,38 +185,42 @@ fn main() {
         println!("{:?}", node);
     }
  */
+let a: String = String::from("st");
     // UTXO: stack + scripts - bitcoin HTLC
     let mut utxo: UTXO = bitcoin::UTXOParser::new()
         .parse(
             r#"
                 UTXO 
-                (first: bool = true, second: string)                
+                (first: bool, second: string, third: signature, fourth: number)                
                 older 2576085;
+                
                 verify "0245a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5212";
                 
-                verify sha256 secret != sha256 second;
+                verify sha256 "scret secrt" != sha256 second;
 
-                if (sha256 "secretRandomHex" != sha256 second) {}
+                verify fourth >= 200;
+
+                if fourth {
+                    verify checksig third;
+                }
+
+                if second == "aaaaaaddddd" {
+                    older 2576085;
+                    verify "0345a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5211";
+                } else {
+                    verify sha256 "scret secrt" != sha256 second;
+                    verify "0245a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5213";
+                }
+
                 "#,
         )
         .unwrap();
     println!("stack: {:?}", utxo.input_stack);
     println!("ast: {:?}", utxo.output_script);
 
-    let stack_table = stack_table(utxo.input_stack);
+    let stack_table = compile::stack_table(utxo.input_stack);
 
     println!("stack_table: {:?}", stack_table);
-    
-    println!("stack_table: {:?}", stack_table.get("first"));
-}
 
-
-fn stack_table(stack: Vec<StackParam>) -> HashMap<String, Type> {
-    let mut stack_table: HashMap<String, Type> = HashMap::new();
-
-    for input in stack {
-        stack_table.insert(input.identifier.0, input.ty);
-    }
-
-    stack_table
+    test_bitcoin();
 }

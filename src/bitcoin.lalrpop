@@ -18,10 +18,10 @@ pub Script: Vec<Statement> = {
 
 // Bitcoin script sig(witness) stack
 pub StackParamList: Vec<StackParam> = {
-    <first:StackParam> <more:MoreStackParams*> => {
-        let mut stack = more;
-        stack.insert(0, first);
-        stack
+    <first:StackParam> <mut more:MoreStackParams*> => {
+        more.reverse();
+        more.push(first);
+        more
     },
     => vec![], // epsilon production
 };
@@ -70,20 +70,17 @@ IfStatement: Statement = {
 BlockStatement: Vec<Statement> = "{" <s:Script> "}" => s;
 
 BitcoinStatement: Statement = {
-    <AfterStatement> => Statement::BitcoinStatement(<>),
-    <OlderStatement> => Statement::BitcoinStatement(<>),
+    <LocktimeStatement> => Statement::BitcoinStatement(<>),
     <VerifyStatement> => Statement::BitcoinStatement(<>),
 }
 
 
 // Below statements don't produce value(so, not expression), just perform an action.
-// Bitcoin specific language sytax. OP_CLTV. inspired by miniscript syntax.
-AfterStatement: BitcoinStatement = "after" <u:UnsignedInteger> <s:SemiColon> => {
-    BitcoinStatement::AfterStatement(u as u32)
-};
-// Bitcoin specific language sytax. OP_CSV. inspired by miniscript syntax.
-OlderStatement: BitcoinStatement = "older" <u:UnsignedInteger> <s:SemiColon> => {
-    BitcoinStatement::OlderStatement(u as u32)
+LocktimeStatement: BitcoinStatement = <l:LocktimeOp> <u:UnsignedInteger> <s:SemiColon> => {
+    BitcoinStatement::LocktimeStatement {
+        op: l,
+        operand: u as u32
+    }
 };
 // Bitcoin specific language sytax. verify signature against public key
 VerifyStatement: BitcoinStatement = "verify" <e:Expression0> <s:SemiColon> => {
@@ -101,7 +98,7 @@ pub Expression1: Expression = {
     <BooleanLiteral> => Expression::BooleanLiteral(<>),
     <StringLiteral> => Expression::StringLiteral(<>),
     <NumberLiteral> => Expression::NumberLiteral(<>),
-    <BitcoinExpression>,
+    <CryptoExpression>,
 };
 
 LiteralExpression: LiteralExpression = {
@@ -112,21 +109,21 @@ LiteralExpression: LiteralExpression = {
 
 // Support both OP_IF and OP_NOTIF
 ConditionExpr: ConditionExpression = {
-    <n:Not> "(" <c:CompareExpr> ")" => {
+    <u:UnaryMathOp> "(" <c:CompareExpr> ")" => {
         ConditionExpression {
-            negate: true,
+            unary: Some(u),
             compare_expr: c
         }
     },
     "(" <c:CompareExpr> ")" => {
         ConditionExpression {
-            negate: false,
+            unary: None,
             compare_expr: c
         }
     }, // to support js like syntax(while redundant)
     <c:CompareExpr> => {
         ConditionExpression {
-            negate: false,
+            unary: None,
             compare_expr: c
         }
     },
@@ -152,52 +149,74 @@ MathExpr: Expression = {
             op: c,
             rhs: Box::new(r),
         }
+    },
+    <c:BinaryMathOp> <l:Expression1> <r:Expression1> => {
+        Expression::MathExpression {
+            lhs: Box::new(l),
+            op: c,
+            rhs: Box::new(r),
+        }
     }
 };
 
-BitcoinExpression: Expression = {
-    <CheckSigExpr> => Expression::BitcoinExpression(<>),
-    <Sha256Expr> => Expression::BitcoinExpression(<>),
-    <Ripemd160Expr> => Expression::BitcoinExpression(<>),
+CryptoExpression: Expression = {
+    <op:CryptoOp> <operand:CryptoOperand> => {
+        Expression::CryptoExpression {
+            op: op,
+            operand: operand,
+        }
+    }
 }
 
-// Below expressions produce value
-// Bitcoin specific language sytax. verify signature against public key
-CheckSigExpr: BitcoinExpression = "checksig" <a:BitcoinExprArgs> => BitcoinExpression::CheckSigExpr(a);
-// Bitcoin specific language sytax. OP_SHA256. inspired by miniscript syntax.
-Sha256Expr: BitcoinExpression = "sha256" <a:BitcoinExprArgs> => BitcoinExpression::Sha256Expr(a);
-// Bitcoin specific language sytax. OP_RIPEMD160. inspired by miniscript syntax.
-Ripemd160Expr: BitcoinExpression = "ripemd160" <a:BitcoinExprArgs> => BitcoinExpression::Ripemd160Expr(a);
-
 // Either variable or string
-pub BitcoinExprArgs: BitcoinExprArgs = {
-    <Identifier> => BitcoinExprArgs::Variable(<>),
-    <StringLiteral> => BitcoinExprArgs::StringLiteral(<>),
+pub CryptoOperand: CryptoOperand = {
+    <Identifier> => CryptoOperand::Variable(<>),
+    <StringLiteral> => CryptoOperand::StringLiteral(<>),
 };
 
 // Below are Token
 // Terminal sequence in the context of lexer(tokenizer)
 
+// Unary Ops
+UnaryMathOp: UnaryMathOp = {
+    "++" => UnaryMathOp::Add, // OP_1ADD
+    "--" => UnaryMathOp::Sub, // OP_1SUB
+    "negate" => UnaryMathOp::Negate, // OP_NEGATE
+    "abs" => UnaryMathOp::Abs, // OP_ABS
+    "!" => UnaryMathOp::Not, // OP_NOT
+}
+
 // Binary Ops(Minus can be both Unary and Binary)
 BinaryMathOp: BinaryMathOp = {
-    "+" => BinaryMathOp::Add,
-    "-" => BinaryMathOp::Sub,
+    "+" => BinaryMathOp::Add, // OP_ADD
+    "-" => BinaryMathOp::Sub, // OP_SUB
+    "max" => BinaryMathOp::Max, // OP_MAX
+    "min" => BinaryMathOp::Min, // OP_SUB
 }
 
 BinaryCompareOp: BinaryCompareOp = {
-    "==" => BinaryCompareOp::Equal,
-    "!=" => BinaryCompareOp::NotEqual,
-    ">"  => BinaryCompareOp::Greater,
-    ">=" => BinaryCompareOp::GreaterOrEqual,
-    "<"  => BinaryCompareOp::Less,
-    "<=" => BinaryCompareOp::LessOrEqual,
+    "==" => BinaryCompareOp::Equal, // OP_EQUAL
+    "!=" => BinaryCompareOp::NotEqual, // OP_EQUAL OP_NOT
+    ">"  => BinaryCompareOp::Greater, // OP_GREATERTHAN
+    ">=" => BinaryCompareOp::GreaterOrEqual, // OP_GREATERTHANOREQUAL
+    "<"  => BinaryCompareOp::Less, // OP_LESSTHAN
+    "<=" => BinaryCompareOp::LessOrEqual, // OP_LESSTHANOREQUAL
 };
+
+CryptoOp: CryptoOp = {
+    "checksig" => CryptoOp::CheckSig, // OP_CHECKSIG
+    "sha256" => CryptoOp::Sha256, // OP_SHA256
+    "ripemd160" => CryptoOp::Ripemd160, // OP_RIPEMD160
+}
+
+LocktimeOp: LocktimeOp = {
+    "older" => LocktimeOp::Cltv, // OP_CHECKLOCKTIMEVERIFY
+    "after" => LocktimeOp::Csv, // OP_CHECKSEQUENCEVERIFY
+}
+
 Assign: String           = "="  => "=".to_string();
 And: String              = "&&" => "&&".to_string();
 Or: String               = "||" => "||".to_string();
-// UnaryOps
-Not: String              = "!"  => "!".to_string();
-Negation: String         = "~"  => "~".to_string();
 
 // Puctuation
 Comma: String = "," => ",".to_string();
