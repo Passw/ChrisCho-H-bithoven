@@ -387,6 +387,12 @@ pub fn compile_expression(bitcoin_script: &mut Vec<u8>, expr: Expression) {
                 push_math_unary(bitcoin_script, opcode);
             }
         }
+        Expression::UnaryMathExpression { operand, op } => {
+            // recursive to compile condition expression
+            compile_expression(bitcoin_script, *operand);
+            // push compare opcode
+            push_math_unary(bitcoin_script, op);
+        }
         Expression::BinaryMathExpression { lhs, op, rhs } => {
             // recursive to compile condition expression
             compile_expression(bitcoin_script, *lhs);

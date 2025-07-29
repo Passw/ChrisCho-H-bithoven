@@ -95,6 +95,7 @@ pub Expression0: Expression = {
 pub Expression1: Expression = {
     <CryptoExpression>,
     <BinaryMathExpression>,
+    <UnaryMathExpression>,
     <Expression2>,
 };
 
@@ -145,6 +146,15 @@ CompareExpr: CompareExpression = {
         }
     }
 }
+
+UnaryMathExpression: Expression = {
+    <op:UnaryMathOp> <operand:Expression1> => {
+        Expression::UnaryMathExpression {
+            op: op,
+            operand: Box::new(operand),
+        }
+    }
+};
 
 BinaryMathExpression: Expression = {/*
     <l:Expression1> <c:InfixBinaryMathOp> <r:Expression1> => {
