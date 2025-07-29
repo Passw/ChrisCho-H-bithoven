@@ -92,13 +92,17 @@ pub Expression0: Expression = {
     <Expression1>,
 };
 
-
 pub Expression1: Expression = {
+    <CryptoExpression>,
+    <BinaryMathExpression>,
+    <Expression2>,
+};
+
+pub Expression2: Expression = {
     <Identifier> => Expression::Variable(<>),
     <BooleanLiteral> => Expression::BooleanLiteral(<>),
     <StringLiteral> => Expression::StringLiteral(<>),
     <NumberLiteral> => Expression::NumberLiteral(<>),
-    <CryptoExpression>,
 };
 
 LiteralExpression: LiteralExpression = {
@@ -142,16 +146,16 @@ CompareExpr: CompareExpression = {
     }
 }
 
-MathExpr: Expression = {
-    <l:Expression1> <c:BinaryMathOp> <r:Expression1> => {
-        Expression::MathExpression {
+BinaryMathExpression: Expression = {/*
+    <l:Expression1> <c:InfixBinaryMathOp> <r:Expression1> => {
+        Expression::BinaryMathExpression {
             lhs: Box::new(l),
             op: c,
             rhs: Box::new(r),
         }
-    },
-    <c:BinaryMathOp> <l:Expression1> <r:Expression1> => {
-        Expression::MathExpression {
+    },*/
+    <c:PostfixBinaryMathOp> <l:Expression1> <r:Expression1> => {
+        Expression::BinaryMathExpression {
             lhs: Box::new(l),
             op: c,
             rhs: Box::new(r),
@@ -160,19 +164,13 @@ MathExpr: Expression = {
 };
 
 CryptoExpression: Expression = {
-    <op:CryptoOp> <operand:CryptoOperand> => {
+    <op:CryptoOp> <operand:Expression1> => {
         Expression::CryptoExpression {
             op: op,
-            operand: operand,
+            operand: Box::new(operand),
         }
     }
 }
-
-// Either variable or string
-pub CryptoOperand: CryptoOperand = {
-    <Identifier> => CryptoOperand::Variable(<>),
-    <StringLiteral> => CryptoOperand::StringLiteral(<>),
-};
 
 // Below are Token
 // Terminal sequence in the context of lexer(tokenizer)
@@ -187,9 +185,18 @@ UnaryMathOp: UnaryMathOp = {
 }
 
 // Binary Ops(Minus can be both Unary and Binary)
-BinaryMathOp: BinaryMathOp = {
+// 1. infix
+InfixBinaryMathOp: BinaryMathOp = {
     "+" => BinaryMathOp::Add, // OP_ADD
     "-" => BinaryMathOp::Sub, // OP_SUB
+}
+// 2. postfix(Reverse Polish Notation)
+// Separate to mitigate ambiguity when face "-".
+// First, the parser could execute the production of BinaryMathOp("-") Expr Expr.
+// Alternatively, the parser could shift the `r#"[0-9]+"#` token and later use it to construct a UnsignedInteger.
+PostfixBinaryMathOp: BinaryMathOp = {
+    "add" => BinaryMathOp::Add, // OP_ADD
+    "sub" => BinaryMathOp::Sub, // OP_SUB
     "max" => BinaryMathOp::Max, // OP_MAX
     "min" => BinaryMathOp::Min, // OP_SUB
 }

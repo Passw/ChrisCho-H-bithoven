@@ -8,184 +8,11 @@ use compile::*;
 use lalrpop_util::lalrpop_mod;
 
 lalrpop_mod!(pub bitcoin); // synthesized by LALRPOP
-                           
-                           #[test]
-                           fn bitcoin() {/*
-                               assert!(bitcoin::ExprParser::new().parse("22").is_ok());
-                               assert!(bitcoin::ExprParser::new().parse("(22)").is_ok());
-                               assert!(bitcoin::ExprParser::new().parse("((((22))))").is_ok());
-                               assert!(bitcoin::ExprParser::new().parse("((22)").is_err());
-                                */
-                           }
-                           
+
+#[test]
+fn bitcoin() {}
+
 fn main() {
-    /*
-    // number overflow
-    println!(
-        "{:?}",
-        bitcoin::ExprParser::new().parse("2147483648").unwrap()
-    );
-    println!("{:?}", bitcoin::ExprParser::new().parse("1").unwrap());
-    // math
-    println!(
-        "{:?}",
-        bitcoin::ExprParser::new()
-            .parse("-1+2-(4+7)+(7-4)")
-            .unwrap()
-    );
-    // assign
-    println!(
-        "{:?}",
-        bitcoin::StatementParser::new()
-            .parse(
-                r#"let _private_z_123 = " 안여누아ㅓㅁ 231#@$@!  /₩12 ㅓ2'''ㅣ;ㅣ x y z123AS S";"#
-            )
-            .unwrap()
-    );
-    // skip all the whitespace
-    println!(
-        "{:?}",
-        bitcoin::StatementParser::new()
-            .parse(
-                r#"
-                let _private_z_123 
-                    =
-                          " 안여누아ㅓㅁ 231#@$@!  /₩12 ㅓ2'''ㅣ;ㅣ x y z123AS S";
-                "#
-            )
-            .unwrap()
-    );
-    // declaration is evaluated to expr
-    println!(
-        "{:?}",
-        bitcoin::StatementParser::new()
-            .parse(
-                "
-                let _private_z_123 
-                    = 123 - 123 +23-(-23) +1;
-                    "
-            )
-            .unwrap()
-    );
-    // declaration is evaluated to expr(boolean)
-    println!(
-        "{:?}",
-        bitcoin::StatementParser::new()
-            .parse(
-                "
-                let _private_z_123 
-                     = false;
-                    "
-            )
-            .unwrap()
-    );
-
-    // program can parse any
-    println!(
-        "{:?}",
-        bitcoin::ScriptParser::new()
-            .parse(
-                r#"
-                older 213;
-                after 2131231;
-                sha256 "abc";
-                ripemd160 "abc";
-                let num = -1+2-(4+7)+(7-4);
-                let _private_z_123 = false;
-                verify "03_public_key";
-                
-                    let num = -1+2-(4+7)+(7-4);
-                    let _private_z_123 = false;
-                    verify "03_public_key";
-                    if (2+3-4 <= 1) {
-                        if 3-4 > 2 {
-                            verify "02_public_key";
-                        } else {
-                            verify "03_public_key";
-                        }
-                    } else {
-                        verify "03_public_key";
-                    } 
-                
-                "#
-            )
-            .unwrap()
-    );
-
-    // bitcoin syntax as expr
-    println!(
-        "{:?}",
-        bitcoin::ScriptParser::new()
-            .parse(
-                r#"
-                let proved = checksig "03_public_key";
-
-                if checksig "03_public_key" == true {
-                    let digest = sha256 "abc";
-                    if sha256 "abc" == "digest" {
-                    }
-                }
-
-                if 213 == true {
-                    if 2131231 == true {
-                    }
-                }
-                "#
-            )
-            .unwrap()
-    );
-
-    // comment skip
-    println!(
-        "{:?}",
-        bitcoin::CommentParser::new()
-            .parse(
-                "
-    //aa
-    "
-            )
-            .unwrap()
-    );
-    println!(
-        "{:?}",
-        bitcoin::CommentParser::new()
-            .parse(
-                "
-    /*
-                hello
-                be careful
-            this is it?
-            */
-    "
-            )
-            .unwrap()
-    );
-
-    // bitcoin HTLC
-    let ast = bitcoin::ScriptParser::new()
-        .parse(
-            r#"
-                let pubkey_alice = "0245a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5212";
-                let pubkey_bob = "0245a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5212";
-                let secret = "secretRandomHex";
-                
-                if "stack![1]" == true {
-                    older 2576085;
-                    verify "pubkey_alice";
-                } else {
-                    if sha256 "secret" != sha256 "stack![0]" {
-                    }
-                    verify "pubkey_bob";   
-                }
-                "#,
-        )
-        .unwrap();
-
-    for node in ast {
-        println!("{:?}", node);
-    }
- */
-let a: String = String::from("st");
     // UTXO: stack + scripts - bitcoin HTLC
     let mut utxo: UTXO = bitcoin::UTXOParser::new()
         .parse(
@@ -216,25 +43,14 @@ let a: String = String::from("st");
                         verify sha256 "scret secrt" != sha256 second;
                         verify checksig "0245a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5213";
                     }
+
+                    verify add sha256 ripemd160 add sha256 2 ripemd160 sha256 3 fourth;
                 }
                 "#,
         )
         .unwrap();
 
-    println!("stack");
-    for stack_item in utxo.input_stack {
-        println!("{:?}", stack_item);
-    }
-    println!("ast");
-    let script = compile(utxo.output_script.clone());
-    println!("{:?}", script);
-    for script_ast_node in utxo.output_script {
-        println!("{:?}", script_ast_node);
-    }
-    //println!("stack: {:?}", utxo.input_stack);
-    //println!("ast: {:?}", utxo.output_script);
-
-    //let stack_table = compile::stack_table(utxo.input_stack);
-
-    //println!("stack_table: {:?}", stack_table);
+    compile(utxo.output_script.clone());
+    println!("STACK: {:?}", utxo.input_stack);
+    println!("AST: {:?}", utxo.output_script);
 }

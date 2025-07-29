@@ -53,13 +53,13 @@ pub enum Expression {
     BooleanLiteral(bool),
     StringLiteral(String),
     ConditionExpression(ConditionExpression),
-    MathExpression {
+    BinaryMathExpression {
         lhs: Box<Expression>,
         op: BinaryMathOp,
         rhs: Box<Expression>,
     },
     CryptoExpression {
-        operand: CryptoOperand,
+        operand: Box<Expression>,
         op: CryptoOp,
     },
 }
@@ -73,14 +73,8 @@ pub enum LiteralExpression {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CryptoExpression {
-    pub operand: CryptoOperand,
+    pub operand: Box<Expression>,
     pub op: CryptoOp,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum CryptoOperand {
-    Variable(Identifier),
-    StringLiteral(String),
 }
 
 #[derive(Clone, Debug, PartialEq)]

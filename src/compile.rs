@@ -216,13 +216,7 @@ pub fn push_math_ternary() {}
 
 // OP_RIPEMD160, OP_SHA1, OP_SHA256, OP_HASH160, OP_HASH256,
 // OP_CHECKSIG, OP_CHECKMULTISIG, OP_CHECKSIGADD
-pub fn push_crypto(script: &mut Vec<u8>, operand: CryptoOperand, op: CryptoOp) {
-    match operand {
-        CryptoOperand::StringLiteral(data) => {
-            push_bytes(script, data);
-        }
-        CryptoOperand::Variable(_) => {}
-    }
+pub fn push_crypto(script: &mut Vec<u8>, op: CryptoOp) {
     match op {
         CryptoOp::CheckSig => {
             let builder =
@@ -343,7 +337,31 @@ pub fn compile_statement(bitcoin_script: &mut Vec<u8>, stmt: Statement) {
 pub fn compile_expression(bitcoin_script: &mut Vec<u8>, expr: Expression) {
     match expr {
         Expression::CryptoExpression { operand, op } => {
-            push_crypto(bitcoin_script, operand, op);
+            match *operand {
+                Expression::StringLiteral(_) => {
+                    compile_expression(bitcoin_script, *operand);
+                }
+                Expression::NumberLiteral(_) => {
+                    compile_expression(bitcoin_script, *operand);
+                }
+                Expression::Variable(_) => {
+                    compile_expression(bitcoin_script, *operand);
+                }
+                Expression::BinaryMathExpression {
+                    lhs: _,
+                    op: _,
+                    rhs: _,
+                } => {
+                    compile_expression(bitcoin_script, *operand);
+                }
+                Expression::CryptoExpression { op: _, operand: _ } => {
+                    compile_expression(bitcoin_script, *operand);
+                }
+                _ => {
+                    panic!("Wrong operand for crypto operation.")
+                }
+            }
+            push_crypto(bitcoin_script, op);
         }
         Expression::StringLiteral(data) => {
             push_bytes(bitcoin_script, data);
@@ -364,12 +382,12 @@ pub fn compile_expression(bitcoin_script: &mut Vec<u8>, expr: Expression) {
             if condition_expr.unary.is_some() {
                 let opcode = condition_expr.unary.unwrap();
                 if opcode != UnaryMathOp::Not {
-                    panic!("OP_NOT(!) is only allowed right before compare expression")
+                    panic!("OP_NOT(!) is only allowed right before compare expression.")
                 }
                 push_math_unary(bitcoin_script, opcode);
             }
         }
-        Expression::MathExpression { lhs, op, rhs } => {
+        Expression::BinaryMathExpression { lhs, op, rhs } => {
             // recursive to compile condition expression
             compile_expression(bitcoin_script, *lhs);
             compile_expression(bitcoin_script, *rhs);
