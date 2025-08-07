@@ -384,23 +384,12 @@ pub fn compile_expression(bitcoin_script: &mut Vec<u8>, expr: Expression) {
         Expression::NumberLiteral(data) => {
             push_int(bitcoin_script, data);
         }
-        Expression::ConditionExpression {
-            unary,
-            compare_expr,
-        } => {
+        Expression::CompareExpression { lhs, op, rhs } => {
             // recursive to compile condition expression
-            compile_expression(bitcoin_script, *compare_expr.lhs);
-            compile_expression(bitcoin_script, *compare_expr.rhs);
+            compile_expression(bitcoin_script, *lhs);
+            compile_expression(bitcoin_script, *rhs);
             // push compare opcode
-            push_compare(bitcoin_script, compare_expr.op);
-            // push OP_NOT at last
-            if unary.is_some() {
-                let opcode = unary.unwrap();
-                if opcode != UnaryMathOp::Not {
-                    panic!("OP_NOT(!) is only allowed right before compare expression.")
-                }
-                push_math_unary(bitcoin_script, opcode);
-            }
+            push_compare(bitcoin_script, op);
         }
         Expression::UnaryMathExpression { operand, op } => {
             // recursive to compile condition expression

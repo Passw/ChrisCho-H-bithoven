@@ -88,7 +88,7 @@ VerifyStatement: BitcoinStatement = "verify" <e:Expression0> <s:SemiColon> => {
 };
 
 pub Expression0: Expression = {
-    <ConditionExpression>,
+    <CompareExpression>,
     <Expression1>,
 };
 
@@ -117,34 +117,11 @@ LiteralExpression: LiteralExpression = {
     <NumberLiteral> => LiteralExpression::NumberLiteral(<>),
 }
 
-// Support both OP_IF and OP_NOTIF
-ConditionExpression: Expression = {/*
-    <u:UnaryMathOp> "(" <c:CompareExpression> ")" => {
-        Expression::ConditionExpression {
-            unary: Some(u),
-            compare_expr: c
-        }
-    },
-    "(" <c:CompareExpression> ")" => {
-        Expression::ConditionExpression {
-            unary: None,
-            compare_expr: c
-        }
-    }, // to support js like syntax(while redundant)*/
-    <c:CompareExpression> => {
-        Expression::ConditionExpression {
-            unary: None,
-            compare_expr: c
-        }
-    },
-}
-
-
 // By separating CmpExpr, you can ensure that boolean operators (&&, ||) only operate on boolean values, 
 // and arithmetic operators (+, -, *, /) only operate on numeric values.
-CompareExpression: CompareExpression = {
+CompareExpression: Expression = {
     <l:Expression1> <c:BinaryCompareOp> <r:Expression1> => {
-        CompareExpression {
+        Expression::CompareExpression {
             lhs: Box::new(l),
             op: c,
             rhs: Box::new(r),
@@ -210,8 +187,6 @@ InfixBinaryMathOp: BinaryMathOp = {
 // First, the parser could execute the production of BinaryMathOp("-") Expr Expr.
 // Alternatively, the parser could shift the `r#"[0-9]+"#` token and later use it to construct a UnsignedInteger.
 PostfixBinaryMathOp: BinaryMathOp = {
-    "add" => BinaryMathOp::Add, // OP_ADD
-    "sub" => BinaryMathOp::Sub, // OP_SUB
     "max" => BinaryMathOp::Max, // OP_MAX
     "min" => BinaryMathOp::Min, // OP_SUB
 }
