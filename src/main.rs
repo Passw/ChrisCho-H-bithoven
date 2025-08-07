@@ -46,6 +46,10 @@ fn main() {
 
                     verify ! abs negate -- ++ sha256 ripemd160 sha256 (2 + ripemd160 sha256 3 + fourth);
                     verify (3 > 4) + (3 > 4) + (3 > 4) + (3 < 4) >= 2;
+
+                    if (second == "abc") && (fourth >= 4) {
+                        older 222;
+                    }
                 }
                 "#,
         )

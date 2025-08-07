@@ -223,6 +223,8 @@ BinaryCompareOp: BinaryCompareOp = {
     ">=" => BinaryCompareOp::GreaterOrEqual, // OP_GREATERTHANOREQUAL
     "<"  => BinaryCompareOp::Less, // OP_LESSTHAN
     "<=" => BinaryCompareOp::LessOrEqual, // OP_LESSTHANOREQUAL
+    "||" => BinaryCompareOp::BoolOr, // OP_LESSTHANOREQUAL
+    "&&" => BinaryCompareOp::BoolAnd, // OP_LESSTHANOREQUAL
 };
 
 CryptoOp: CryptoOp = {

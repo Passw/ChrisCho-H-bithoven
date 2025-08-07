@@ -114,6 +114,18 @@ pub fn push_compare(script: &mut Vec<u8>, operand: BinaryCompareOp) {
 
             script.extend_from_slice(builder.as_bytes());
         }
+        BinaryCompareOp::BoolOr => {
+            let builder =
+                bitcoin::script::Builder::new().push_opcode(bitcoin::opcodes::all::OP_BOOLOR);
+
+            script.extend_from_slice(builder.as_bytes());
+        }
+        BinaryCompareOp::BoolAnd => {
+            let builder =
+                bitcoin::script::Builder::new().push_opcode(bitcoin::opcodes::all::OP_BOOLAND);
+
+            script.extend_from_slice(builder.as_bytes());
+        }
     }
 }
 
