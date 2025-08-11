@@ -47,6 +47,7 @@ pub Statement: Statement = {
     <IfStatement>,
     <LocktimeStatement>,
     <VerifyStatement>,
+    <ExpressionStatement>,
 }
 
 // If statement follows semantics of bitcoin OP_(NOT)IF, OP_ELSE...
@@ -82,6 +83,12 @@ LocktimeStatement: Statement = <op:LocktimeOp> <operand:UnsignedInteger> <s:Semi
 VerifyStatement: Statement = "verify" <e:Expression0> <s:SemiColon> => {
     Statement::VerifyStatement(e)
 };
+
+// Allow expression statement
+ExpressionStatement: Statement = <e:Expression0> <s:SemiColon> => {
+    Statement::ExpressionStatement(e)
+};
+
 
 pub Expression0: Expression = {
     <CompareExpression>,

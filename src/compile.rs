@@ -350,6 +350,9 @@ pub fn compile_statement(bitcoin_script: &mut Vec<u8>, stmt: Statement) {
             }
             push_control_end(bitcoin_script);
         }
+        Statement::ExpressionStatement(expr) => {
+            compile_expression(bitcoin_script, expr);
+        }
     }
 }
 

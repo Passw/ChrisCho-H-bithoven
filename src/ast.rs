@@ -31,6 +31,7 @@ pub enum Statement {
         op: LocktimeOp,
     },
     VerifyStatement(Expression),
+    ExpressionStatement(Expression),
 }
 
 #[derive(Clone, Debug, PartialEq)]
