@@ -9,7 +9,14 @@ pub struct Bitcom {
 pub struct Pragma {
     pub language: String,
     pub version: String,
-    pub target: String,
+    pub target: Target,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Target {
+    Legacy,
+    Segwit,
+    Taproot,
 }
 
 #[derive(Clone, Debug, PartialEq)]

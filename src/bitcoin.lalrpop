@@ -27,10 +27,10 @@ pub Version: String = {
     }
 }
 
-pub Target: String = {
-    "legacy" => "legacy".to_string(),
-    "segwit" => "segwit".to_string(),
-    "taproot" => "taproot".to_string(),
+pub Target: Target = {
+    "legacy" => Target::Legacy,
+    "segwit" => Target::Segwit,
+    "taproot" => Target::Taproot,
 }
 
 pub Script: Vec<Statement> = {

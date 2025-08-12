@@ -1,5 +1,3 @@
-use std::{collections::HashMap, string};
-
 pub mod ast;
 pub mod compile;
 
@@ -9,7 +7,6 @@ use lalrpop_util::lalrpop_mod;
 
 use clap::Parser;
 use std::fs;
-use std::io;
 
 lalrpop_mod!(pub bitcoin); // synthesized by LALRPOP
 
@@ -27,9 +24,9 @@ fn main() {
 
     let bitcom = read_bitcom(args.path);
     // UTXO: stack + scripts - bitcoin HTLC
-    let mut utxo: Bitcom = bitcoin::BitcomParser::new().parse(&bitcom).unwrap();
+    let utxo: Bitcom = bitcoin::BitcomParser::new().parse(&bitcom).unwrap();
 
-    compile(utxo.output_script.clone());
+    compile(utxo.output_script.clone(), &utxo.pragma.target);
     println!("PRAGMA: {:?}", utxo.pragma);
     println!("STACK: {:?}", utxo.input_stack);
     println!("AST: {:?}", utxo.output_script);

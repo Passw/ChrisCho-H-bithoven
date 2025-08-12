@@ -4,7 +4,7 @@ use bitcoin::opcodes::all::{
 };
 
 use crate::ast::*;
-use std::{collections::HashMap, io::Read};
+use std::collections::HashMap;
 
 /*
     1. Pure Push
@@ -241,16 +241,28 @@ pub fn push_math_ternary() {}
     - Push new single stack item.
 */
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum CheckSigType {
+    Single,
+    Multi,
+    Add,
+}
+
 // OP_RIPEMD160, OP_SHA1, OP_SHA256, OP_HASH160, OP_HASH256,
 // OP_CHECKSIG, OP_CHECKMULTISIG, OP_CHECKSIGADD
-pub fn push_crypto(script: &mut Vec<u8>, op: CryptoOp, is_multi: bool) {
+pub fn push_crypto(script: &mut Vec<u8>, op: CryptoOp, check_sig_ty: Option<CheckSigType>) {
     match op {
         CryptoOp::CheckSig => {
-            let builder = bitcoin::script::Builder::new().push_opcode(if is_multi {
-                bitcoin::opcodes::all::OP_CHECKMULTISIG
-            } else {
-                bitcoin::opcodes::all::OP_CHECKSIG
-            });
+            // If it's none,
+            if check_sig_ty.is_none() {
+                ()
+            }
+            let builder =
+                bitcoin::script::Builder::new().push_opcode(match check_sig_ty.unwrap() {
+                    CheckSigType::Single => bitcoin::opcodes::all::OP_CHECKSIG,
+                    CheckSigType::Multi => bitcoin::opcodes::all::OP_CHECKMULTISIG,
+                    CheckSigType::Add => bitcoin::opcodes::all::OP_CHECKSIGADD,
+                });
 
             script.extend_from_slice(builder.as_bytes());
         }
@@ -313,11 +325,11 @@ pub fn stack_table(stack: Vec<StackParam>) -> HashMap<String, Type> {
     stack_table
 }
 
-pub fn compile(ast: Vec<Statement>) -> Vec<u8> {
+pub fn compile(ast: Vec<Statement>, target: &Target) -> Vec<u8> {
     let mut bitcoin_script: Vec<u8> = Vec::new();
 
     for node in ast {
-        compile_statement(&mut bitcoin_script, node);
+        compile_statement(&mut bitcoin_script, node, target);
     }
     let optimized_script = opcode_optimizer(bitcoin_script);
 
@@ -326,14 +338,14 @@ pub fn compile(ast: Vec<Statement>) -> Vec<u8> {
     return optimized_script;
 }
 
-pub fn compile_statement(bitcoin_script: &mut Vec<u8>, stmt: Statement) {
+pub fn compile_statement(bitcoin_script: &mut Vec<u8>, stmt: Statement, target: &Target) {
     match stmt {
         Statement::LocktimeStatement { operand, op } => {
             push_locktime(bitcoin_script, operand, op);
         }
         Statement::VerifyStatement(condition_expr) => {
             // compile expression first
-            compile_expression(bitcoin_script, condition_expr);
+            compile_expression(bitcoin_script, condition_expr, target);
             // push verify at last
             push_control_verify(bitcoin_script);
         }
@@ -343,80 +355,119 @@ pub fn compile_statement(bitcoin_script: &mut Vec<u8>, stmt: Statement) {
             else_block,
         } => {
             // compile expression first
-            compile_expression(bitcoin_script, condition_expr);
+            compile_expression(bitcoin_script, condition_expr, target);
             push_control_if(bitcoin_script);
             // recursive to compile expression inside if block
             for if_stmt in if_block {
-                compile_statement(bitcoin_script, if_stmt);
+                compile_statement(bitcoin_script, if_stmt, target);
             }
             if else_block.is_some() {
                 push_control_else(bitcoin_script);
                 // recursive to compile expression inside else block
                 for else_stmt in else_block.unwrap() {
-                    compile_statement(bitcoin_script, else_stmt);
+                    compile_statement(bitcoin_script, else_stmt, target);
                 }
             }
             push_control_end(bitcoin_script);
         }
         Statement::ExpressionStatement(expr) => {
-            compile_expression(bitcoin_script, expr);
+            compile_expression(bitcoin_script, expr, target);
         }
     }
 }
 
-pub fn compile_expression(bitcoin_script: &mut Vec<u8>, expr: Expression) {
+pub fn compile_expression(bitcoin_script: &mut Vec<u8>, expr: Expression, target: &Target) {
     match expr {
         Expression::CryptoExpression { operand, op } => {
-            let mut is_multi = false;
             match *operand {
                 Expression::StringLiteral(_) => {
-                    compile_expression(bitcoin_script, *operand);
+                    compile_expression(bitcoin_script, *operand, target);
+                    push_crypto(bitcoin_script, op, Some(CheckSigType::Single));
                 }
                 Expression::NumberLiteral(_) => {
-                    compile_expression(bitcoin_script, *operand);
+                    compile_expression(bitcoin_script, *operand, target);
+                    push_crypto(bitcoin_script, op, Some(CheckSigType::Single));
                 }
                 Expression::Variable(_) => {
-                    compile_expression(bitcoin_script, *operand);
+                    compile_expression(bitcoin_script, *operand, target);
+                    push_crypto(bitcoin_script, op, Some(CheckSigType::Single));
                 }
-                Expression::MultiSigExpression { m: _, n: _ } => {
+                Expression::MultiSigExpression { m, n: _ } => {
                     if op != CryptoOp::CheckSig {
                         panic!("Vector is only allowed for multi sig");
                     }
-                    compile_expression(bitcoin_script, *operand);
-                    is_multi = true;
+                    compile_expression(bitcoin_script, *operand, target);
+                    // push multisig here
+                    if target == &Target::Legacy || target == &Target::Segwit {
+                        push_crypto(
+                            bitcoin_script,
+                            CryptoOp::CheckSig,
+                            Some(CheckSigType::Multi),
+                        );
+                    } else if target == &Target::Taproot {
+                        // Final Key pushes Number and OP_NUMEQUAL
+                        // push m
+                        push_int(bitcoin_script, m);
+                        // OP_NUMEQUAL
+                        push_compare(bitcoin_script, BinaryCompareOp::Equal);
+                    }
                 }
                 Expression::BinaryMathExpression {
                     lhs: _,
                     op: _,
                     rhs: _,
                 } => {
-                    compile_expression(bitcoin_script, *operand);
+                    compile_expression(bitcoin_script, *operand, target);
+                    push_crypto(bitcoin_script, op, Some(CheckSigType::Single));
                 }
                 Expression::UnaryMathExpression { operand: _, op: _ } => {
-                    compile_expression(bitcoin_script, *operand);
+                    compile_expression(bitcoin_script, *operand, target);
+                    push_crypto(bitcoin_script, op, Some(CheckSigType::Single));
                 }
                 Expression::ByteExpression { operand: _, op: _ } => {
-                    compile_expression(bitcoin_script, *operand);
+                    compile_expression(bitcoin_script, *operand, target);
+                    push_crypto(bitcoin_script, op, Some(CheckSigType::Single));
                 }
                 Expression::CryptoExpression { op: _, operand: _ } => {
-                    compile_expression(bitcoin_script, *operand);
+                    compile_expression(bitcoin_script, *operand, target);
+                    push_crypto(bitcoin_script, op, Some(CheckSigType::Single));
                 }
                 _ => {
                     panic!("Wrong operand for crypto operation.")
                 }
             }
-            push_crypto(bitcoin_script, op, is_multi);
         }
         Expression::MultiSigExpression { m, n } => {
-            let num = n.len() as i64;
-            // push m
-            push_int(bitcoin_script, m);
-            // push pubkey
-            for data in n {
-                push_bytes(bitcoin_script, data);
+            match target {
+                Target::Taproot => {
+                    // push pubkey
+                    for (i, data) in n.iter().enumerate() {
+                        push_bytes(bitcoin_script, data.to_string());
+                        push_crypto(
+                            bitcoin_script,
+                            CryptoOp::CheckSig,
+                            // 1st key pushes OP_CHECKSIG
+                            if i == 0 {
+                                Some(CheckSigType::Single)
+                            } else {
+                                // Other push OP_CHECKSIGADD
+                                Some(CheckSigType::Add)
+                            },
+                        )
+                    }
+                }
+                _ => {
+                    let num = n.len() as i64;
+                    // push m
+                    push_int(bitcoin_script, m);
+                    // push pubkey
+                    for data in n {
+                        push_bytes(bitcoin_script, data);
+                    }
+                    // push n
+                    push_int(bitcoin_script, num);
+                }
             }
-            // push n
-            push_int(bitcoin_script, num);
         }
         Expression::StringLiteral(data) => {
             push_bytes(bitcoin_script, data);
@@ -429,27 +480,27 @@ pub fn compile_expression(bitcoin_script: &mut Vec<u8>, expr: Expression) {
         }
         Expression::CompareExpression { lhs, op, rhs } => {
             // recursive to compile condition expression
-            compile_expression(bitcoin_script, *lhs);
-            compile_expression(bitcoin_script, *rhs);
+            compile_expression(bitcoin_script, *lhs, target);
+            compile_expression(bitcoin_script, *rhs, target);
             // push compare opcode
             push_compare(bitcoin_script, op);
         }
         Expression::UnaryMathExpression { operand, op } => {
             // recursive to compile condition expression
-            compile_expression(bitcoin_script, *operand);
+            compile_expression(bitcoin_script, *operand, target);
             // push math unary opcode
             push_math_unary(bitcoin_script, op);
         }
         Expression::BinaryMathExpression { lhs, op, rhs } => {
             // recursive to compile condition expression
-            compile_expression(bitcoin_script, *lhs);
-            compile_expression(bitcoin_script, *rhs);
+            compile_expression(bitcoin_script, *lhs, target);
+            compile_expression(bitcoin_script, *rhs, target);
             // push math binary opcode
             push_math_binary(bitcoin_script, op);
         }
         Expression::ByteExpression { operand, op: _ } => {
             // recursive to compile condition expression
-            compile_expression(bitcoin_script, *operand);
+            compile_expression(bitcoin_script, *operand, target);
             // push byte opcode
             push_bytes_len(bitcoin_script);
         }
