@@ -23,8 +23,9 @@ pub fn push_int(script: &mut Vec<u8>, data: i64) {
 // Push any type of byte. Some are overlapped with push_int.
 // Reference: <https://github.com/bitcoin/bips/blob/master/bip-0062.mediawiki#push-operators>
 pub fn push_bytes(script: &mut Vec<u8>, data: String) {
-    let bytes =
-        <&bitcoin::script::PushBytes>::try_from(data.as_bytes()).expect("String to bytes error");
+    let hex_bytes = hex::decode(data).expect("String literal should be hex");
+    let bytes = <&bitcoin::script::PushBytes>::try_from(hex_bytes.as_slice())
+        .expect("String to bytes error");
     let builder = bitcoin::script::Builder::new().push_slice(bytes);
 
     script.extend_from_slice(builder.as_bytes());
