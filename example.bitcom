@@ -1,4 +1,8 @@
-UTXO (first: bool, second: string, third: signature, fourth: number) {
+pragma bitcom version 0.0.1;
+pragma bitcom target segwit;
+
+(first: bool, second: string, third: signature, fourth: number) 
+{
     older 2576085;
     after 122;
     verify checksig "0245a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5212";

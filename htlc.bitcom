@@ -1,4 +1,8 @@
-UTXO (condition: bool, preimage: string, alice_or_bob: signature) {
+pragma bitcom version 0.0.1;
+pragma bitcom target segwit;
+
+(condition: bool, preimage: string, alice_or_bob: signature) 
+{
     if condition {
         older 2576085;
         checksig "0245a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5212";

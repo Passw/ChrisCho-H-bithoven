@@ -18,9 +18,10 @@ fn bitcoin() {}
 fn main() {
     let bitcom = read_bitcom("./multisig.bitcom".to_string());
     // UTXO: stack + scripts - bitcoin HTLC
-    let mut utxo: UTXO = bitcoin::UTXOParser::new().parse(&bitcom).unwrap();
+    let mut utxo: Bitcom = bitcoin::BitcomParser::new().parse(&bitcom).unwrap();
 
     compile(utxo.output_script.clone());
+    println!("PRAGMA: {:?}", utxo.pragma);
     println!("STACK: {:?}", utxo.input_stack);
     println!("AST: {:?}", utxo.output_script);
 }

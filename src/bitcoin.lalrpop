@@ -3,13 +3,34 @@ use super::ast::*;
 
 grammar;
 
-pub UTXO: UTXO = {
-    "UTXO" "(" <stack:StackParamList> ")" "{" <script: Script> "}" => {
-        UTXO {
+pub Bitcom: Bitcom = {
+    "pragma" <language: Language> "version" <version: Version> <sc1: SemiColon>
+    "pragma" <language2: Language> "target" <target: Target> <sc2: SemiColon>
+    "(" <stack:StackParamList> ")" "{" <script: Script> "}" => {
+        Bitcom {
+            pragma: Pragma {
+                language, version, target
+            },
             input_stack: stack,
             output_script: script,
         }
     }
+}
+
+pub Language: String = {
+    "bitcom" => "bitcom".to_string(),
+}
+
+pub Version: String = {
+    <one:UnsignedInteger> <d1:Dot> <two:UnsignedInteger> <d2:Dot> <three:UnsignedInteger> => {
+        one.to_string() + &d1 + &two.to_string() + &d2 + &three.to_string()
+    }
+}
+
+pub Target: String = {
+    "legacy" => "legacy".to_string(),
+    "segwit" => "segwit".to_string(),
+    "taproot" => "taproot".to_string(),
 }
 
 pub Script: Vec<Statement> = {
@@ -236,6 +257,7 @@ LocktimeOp: LocktimeOp = {
 Assign: String           = "="  => "=".to_string();
 
 // Puctuation
+Dot: String = "." => ".".to_string();
 Comma: String = "," => ",".to_string();
 Colon: String = ":" => ":".to_string();
 SemiColon: String = ";" => ";".to_string();

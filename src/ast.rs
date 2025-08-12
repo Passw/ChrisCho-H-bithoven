@@ -1,7 +1,15 @@
 #[derive(Debug, PartialEq)]
-pub struct UTXO {
+pub struct Bitcom {
+    pub pragma: Pragma,
     pub input_stack: Vec<StackParam>,
     pub output_script: Vec<Statement>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Pragma {
+    pub language: String,
+    pub version: String,
+    pub target: String,
 }
 
 #[derive(Clone, Debug, PartialEq)]

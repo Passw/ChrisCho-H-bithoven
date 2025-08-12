@@ -1,4 +1,8 @@
-UTXO (sig1: signature, sig2: signature) {
+pragma bitcom version 0.0.1;
+pragma bitcom target segwit;
+
+(sig1: signature, sig2: signature)
+{
     verify checksig "0345a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5211";
     checksig [2, "0345a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5211", "0245a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5212"];
 }
