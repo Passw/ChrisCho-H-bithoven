@@ -154,6 +154,8 @@ pub enum BinaryCompareOp {
     LessOrEqual,
     BoolOr,
     BoolAnd,
+    NumEqual,
+    NumNotEqual,
 }
 
 #[derive(Clone, Debug, PartialEq)]

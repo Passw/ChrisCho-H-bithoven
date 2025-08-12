@@ -1,6 +1,7 @@
 use bitcoin::opcodes::all::{
     OP_CHECKMULTISIG, OP_CHECKMULTISIGVERIFY, OP_CHECKSIG, OP_CHECKSIGVERIFY, OP_EQUAL,
-    OP_EQUALVERIFY, OP_HASH160, OP_HASH256, OP_RIPEMD160, OP_SHA256, OP_VERIFY,
+    OP_EQUALVERIFY, OP_HASH160, OP_HASH256, OP_NUMEQUAL, OP_NUMEQUALVERIFY, OP_RIPEMD160,
+    OP_SHA256, OP_VERIFY,
 };
 
 use crate::ast::*;
@@ -138,6 +139,18 @@ pub fn push_compare(script: &mut Vec<u8>, operand: BinaryCompareOp) {
         BinaryCompareOp::BoolAnd => {
             let builder =
                 bitcoin::script::Builder::new().push_opcode(bitcoin::opcodes::all::OP_BOOLAND);
+
+            script.extend_from_slice(builder.as_bytes());
+        }
+        BinaryCompareOp::NumEqual => {
+            let builder =
+                bitcoin::script::Builder::new().push_opcode(bitcoin::opcodes::all::OP_NUMEQUAL);
+
+            script.extend_from_slice(builder.as_bytes());
+        }
+        BinaryCompareOp::NumNotEqual => {
+            let builder =
+                bitcoin::script::Builder::new().push_opcode(bitcoin::opcodes::all::OP_NUMNOTEQUAL);
 
             script.extend_from_slice(builder.as_bytes());
         }
@@ -333,8 +346,6 @@ pub fn compile(ast: Vec<Statement>, target: &Target) -> Vec<u8> {
     }
     let optimized_script = opcode_optimizer(bitcoin_script);
 
-    let script = bitcoin::Script::from_bytes(&optimized_script);
-    println!("{:?}", script);
     return optimized_script;
 }
 
@@ -409,7 +420,7 @@ pub fn compile_expression(bitcoin_script: &mut Vec<u8>, expr: Expression, target
                         // push m
                         push_int(bitcoin_script, m);
                         // OP_NUMEQUAL
-                        push_compare(bitcoin_script, BinaryCompareOp::Equal);
+                        push_compare(bitcoin_script, BinaryCompareOp::NumEqual);
                     }
                 }
                 Expression::BinaryMathExpression {
@@ -509,19 +520,34 @@ pub fn compile_expression(bitcoin_script: &mut Vec<u8>, expr: Expression, target
 }
 
 // From compiled opcodes, optimize opcodes.
+// To do. skip OP_PUSHBYTES
 // e.g. OP_EQUAL + OP_VERIFY => OP_EQUALVERIFY
 pub fn opcode_optimizer(bitcoin_script: Vec<u8>) -> Vec<u8> {
     let mut optimized_script: Vec<u8> = vec![];
     let mut i = 0;
-    // loop except the last element
-    while i < bitcoin_script.len() - 1 {
+    // loop
+    while i < bitcoin_script.len() {
         let op = bitcoin_script[i];
 
+        // if last element, just push and break;
+        if i == bitcoin_script.len() - 1 {
+            optimized_script.push(op);
+            break;
+        }
+        // else try optimizing
         match bitcoin::Opcode::from(op) {
             OP_EQUAL => {
                 let next = bitcoin::Opcode::from(bitcoin_script[i + 1]);
                 if next == OP_VERIFY {
                     optimized_script.push(OP_EQUALVERIFY.to_u8());
+                    i += 2;
+                    continue;
+                }
+            }
+            OP_NUMEQUAL => {
+                let next = bitcoin::Opcode::from(bitcoin_script[i + 1]);
+                if next == OP_VERIFY {
+                    optimized_script.push(OP_NUMEQUALVERIFY.to_u8());
                     i += 2;
                     continue;
                 }
@@ -561,8 +587,6 @@ pub fn opcode_optimizer(bitcoin_script: Vec<u8>) -> Vec<u8> {
         optimized_script.push(op);
         i += 1;
     }
-
-    optimized_script.push(bitcoin_script[bitcoin_script.len() - 1]);
 
     return optimized_script;
 }

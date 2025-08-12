@@ -26,10 +26,12 @@ fn main() {
     // UTXO: stack + scripts - bitcoin HTLC
     let utxo: Bitcom = bitcoin::BitcomParser::new().parse(&bitcom).unwrap();
 
-    compile(utxo.output_script.clone(), &utxo.pragma.target);
+    let script = compile(utxo.output_script.clone(), &utxo.pragma.target);
     println!("PRAGMA: {:?}", utxo.pragma);
     println!("STACK: {:?}", utxo.input_stack);
     println!("AST: {:?}", utxo.output_script);
+
+    println!("{:?}", script);
 }
 
 fn read_bitcom(file_path: String) -> String {
