@@ -387,22 +387,13 @@ pub fn compile_statement(bitcoin_script: &mut Vec<u8>, stmt: Statement, target: 
     }
 }
 
+// Bitcoin script follows Reverse Polish Notation.
+// Therefore, we should push operands first, then op.
+// The challenge is when we face the identifier, the given inputs.
 pub fn compile_expression(bitcoin_script: &mut Vec<u8>, expr: Expression, target: &Target) {
     match expr {
         Expression::CryptoExpression { operand, op } => {
             match *operand {
-                Expression::StringLiteral(_) => {
-                    compile_expression(bitcoin_script, *operand, target);
-                    push_crypto(bitcoin_script, op, Some(CheckSigType::Single));
-                }
-                Expression::NumberLiteral(_) => {
-                    compile_expression(bitcoin_script, *operand, target);
-                    push_crypto(bitcoin_script, op, Some(CheckSigType::Single));
-                }
-                Expression::Variable(_) => {
-                    compile_expression(bitcoin_script, *operand, target);
-                    push_crypto(bitcoin_script, op, Some(CheckSigType::Single));
-                }
                 Expression::MultiSigExpression { m, n: _ } => {
                     if op != CryptoOp::CheckSig {
                         panic!("Vector is only allowed for multi sig");
@@ -423,28 +414,10 @@ pub fn compile_expression(bitcoin_script: &mut Vec<u8>, expr: Expression, target
                         push_compare(bitcoin_script, BinaryCompareOp::NumEqual);
                     }
                 }
-                Expression::BinaryMathExpression {
-                    lhs: _,
-                    op: _,
-                    rhs: _,
-                } => {
-                    compile_expression(bitcoin_script, *operand, target);
-                    push_crypto(bitcoin_script, op, Some(CheckSigType::Single));
-                }
-                Expression::UnaryMathExpression { operand: _, op: _ } => {
-                    compile_expression(bitcoin_script, *operand, target);
-                    push_crypto(bitcoin_script, op, Some(CheckSigType::Single));
-                }
-                Expression::ByteExpression { operand: _, op: _ } => {
-                    compile_expression(bitcoin_script, *operand, target);
-                    push_crypto(bitcoin_script, op, Some(CheckSigType::Single));
-                }
-                Expression::CryptoExpression { op: _, operand: _ } => {
-                    compile_expression(bitcoin_script, *operand, target);
-                    push_crypto(bitcoin_script, op, Some(CheckSigType::Single));
-                }
                 _ => {
-                    panic!("Wrong operand for crypto operation.")
+                    // To do. need to panic for wrong operand for crypto op
+                    compile_expression(bitcoin_script, *operand, target);
+                    push_crypto(bitcoin_script, op, Some(CheckSigType::Single));
                 }
             }
         }
