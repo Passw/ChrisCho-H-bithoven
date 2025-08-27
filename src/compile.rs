@@ -325,6 +325,20 @@ pub fn push_locktime(script: &mut Vec<u8>, operand: u32, op: LocktimeOp) {
     }
 }
 
+pub fn push_to_alt_stack(script: &mut Vec<u8>) {
+    let builder = bitcoin::script::Builder::new().push_opcode(bitcoin::opcodes::all::OP_TOALTSTACK);
+
+    script.extend_from_slice(builder.as_bytes());
+}
+
+pub fn push_from_alt_stack(script: &mut Vec<u8>) {
+    let builder = bitcoin::script::Builder::new()
+        .push_opcode(bitcoin::opcodes::all::OP_FROMALTSTACK)
+        .push_opcode(bitcoin::opcodes::all::OP_SWAP);
+
+    script.extend_from_slice(builder.as_bytes());
+}
+
 // From compiled opcodes, add stack ops or re-order opcodes.
 pub fn stack_resolver() {}
 
@@ -453,19 +467,12 @@ pub fn compile_expression(bitcoin_script: &mut Vec<u8>, expr: Expression, target
                 }
             }
         }
-        Expression::StringLiteral(data) => {
-            push_bytes(bitcoin_script, data);
-        }
-        Expression::BooleanLiteral(data) => {
-            push_int(bitcoin_script, data.into());
-        }
-        Expression::NumberLiteral(data) => {
-            push_int(bitcoin_script, data);
-        }
         Expression::CompareExpression { lhs, op, rhs } => {
             // recursive to compile condition expression
             compile_expression(bitcoin_script, *lhs, target);
+            push_to_alt_stack(bitcoin_script);
             compile_expression(bitcoin_script, *rhs, target);
+            push_from_alt_stack(bitcoin_script);
             // push compare opcode
             push_compare(bitcoin_script, op);
         }
@@ -478,7 +485,9 @@ pub fn compile_expression(bitcoin_script: &mut Vec<u8>, expr: Expression, target
         Expression::BinaryMathExpression { lhs, op, rhs } => {
             // recursive to compile condition expression
             compile_expression(bitcoin_script, *lhs, target);
+            push_to_alt_stack(bitcoin_script);
             compile_expression(bitcoin_script, *rhs, target);
+            push_from_alt_stack(bitcoin_script);
             // push math binary opcode
             push_math_binary(bitcoin_script, op);
         }
@@ -487,6 +496,15 @@ pub fn compile_expression(bitcoin_script: &mut Vec<u8>, expr: Expression, target
             compile_expression(bitcoin_script, *operand, target);
             // push byte opcode
             push_bytes_len(bitcoin_script);
+        }
+        Expression::StringLiteral(data) => {
+            push_bytes(bitcoin_script, data);
+        }
+        Expression::BooleanLiteral(data) => {
+            push_int(bitcoin_script, data.into());
+        }
+        Expression::NumberLiteral(data) => {
+            push_int(bitcoin_script, data);
         }
         _ => (),
     }
