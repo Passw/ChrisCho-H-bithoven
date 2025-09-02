@@ -84,15 +84,17 @@ pub Statement: Statement = {
 // reference1: https://bitcoin.stackexchange.com/questions/103844/inner-working-of-op-if-and-op-else
 // reference2: https://bitcoin.stackexchange.com/questions/90868/does-bitcoin-script-support-nested-ifs-op-if-or-op-notif-inside-one-another
 IfStatement: Statement = {
-    "if" <c:Expression0> <b:BlockStatement> => {
+    <l:@L> "if" <c:Expression0> <b:BlockStatement> <r:@R> => {
         Statement::IfStatement {
+            loc: Location{start: l, end: r},
             condition_expr: c,
             if_block: b,
             else_block: None,
         }
     },
-    "if" <c:Expression0> <b1:BlockStatement> "else" <b2:BlockStatement> => {
+    <l:@L> "if" <c:Expression0> <b1:BlockStatement> "else" <b2:BlockStatement> <r:@R> => {
         Statement::IfStatement {
+            loc: Location{start: l, end: r},
             condition_expr: c,
             if_block: b1,
             else_block: Some(b2),
@@ -103,20 +105,21 @@ BlockStatement: Vec<Statement> = "{" <s:Script> "}" => s;
 
 
 // Below statements don't produce value(so, not expression), just perform an action.
-LocktimeStatement: Statement = <op:LocktimeOp> <operand:UnsignedInteger> <s:SemiColon> => {
+LocktimeStatement: Statement = <l:@L> <op:LocktimeOp> <operand:UnsignedInteger> <r:@R> <s:SemiColon> => {
     Statement::LocktimeStatement {
+        loc: Location{start: l, end: r},
         op: op,
         operand: operand as u32
     }
 };
 // Bitcoin specific language sytax. verify signature against public key
-VerifyStatement: Statement = "verify" <e:Expression0> <s:SemiColon> => {
-    Statement::VerifyStatement(e)
+VerifyStatement: Statement = <l:@L> "verify" <e:Expression0> <r:@R> <s:SemiColon> => {
+    Statement::VerifyStatement(Location{start: l, end: r}, e)
 };
 
 // Allow expression statement
-ExpressionStatement: Statement = <e:Expression0> <s:SemiColon> => {
-    Statement::ExpressionStatement(e)
+ExpressionStatement: Statement = <l:@L> <e:Expression0> <r:@R> <s:SemiColon> => {
+    Statement::ExpressionStatement(Location{start: l, end: r}, e)
 };
 
 pub Expression0: Expression = {

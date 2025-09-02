@@ -34,18 +34,19 @@ pub fn check_stamtement(ast: Vec<Statement>) {
         // Pass IfStatement as it contains Script in if(else) block.
         // Checks the last statment of the script(or script in block).
         Statement::IfStatement {
+            loc: _,
             condition_expr: _,
             if_block: _,
             else_block: _,
         } => (),
-        Statement::ExpressionStatement(_) => (),
+        Statement::ExpressionStatement(_, _) => (),
         _ => {
             panic!("Last statement must be evaluated to value. verify, older, after statements are not allowed");
         }
     }
     for stmt in &ast[0..ast.len() - 1] {
         match stmt {
-            Statement::ExpressionStatement(_) => {
+            Statement::ExpressionStatement(_, _) => {
                 panic!("Expression statement must be at last. Only verify, older, after statements are allowed.");
             }
             _ => (),

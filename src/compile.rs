@@ -359,16 +359,21 @@ pub fn compile(ast: Vec<Statement>, target: &Target) -> Vec<u8> {
 
 pub fn compile_statement(bitcoin_script: &mut Vec<u8>, stmt: Statement, target: &Target) {
     match stmt {
-        Statement::LocktimeStatement { operand, op } => {
+        Statement::LocktimeStatement {
+            loc: _,
+            operand,
+            op,
+        } => {
             push_locktime(bitcoin_script, operand, op);
         }
-        Statement::VerifyStatement(condition_expr) => {
+        Statement::VerifyStatement(_loc, condition_expr) => {
             // compile expression first
             compile_expression(bitcoin_script, condition_expr, target);
             // push verify at last
             push_control_verify(bitcoin_script);
         }
         Statement::IfStatement {
+            loc: _,
             condition_expr,
             if_block,
             else_block,
@@ -389,7 +394,7 @@ pub fn compile_statement(bitcoin_script: &mut Vec<u8>, stmt: Statement, target: 
             }
             push_control_end(bitcoin_script);
         }
-        Statement::ExpressionStatement(expr) => {
+        Statement::ExpressionStatement(_loc, expr) => {
             compile_expression(bitcoin_script, expr, target);
         }
     }

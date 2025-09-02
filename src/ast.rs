@@ -35,22 +35,31 @@ pub enum Type {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct Location {
+    pub start: usize,
+    pub end: usize,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum Statement {
     IfStatement {
+        loc: Location,
         condition_expr: Expression,
         if_block: Vec<Statement>,
         else_block: Option<Vec<Statement>>,
     },
     LocktimeStatement {
+        loc: Location,
         operand: u32,
         op: LocktimeOp,
     },
-    VerifyStatement(Expression),
-    ExpressionStatement(Expression),
+    VerifyStatement(Location, Expression),
+    ExpressionStatement(Location, Expression),
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct IfStatement {
+    pub loc: Location,
     pub condition_expr: Expression,
     pub if_block: Vec<Statement>,
     pub else_block: Option<Vec<Statement>>,
@@ -58,6 +67,7 @@ pub struct IfStatement {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct LocktimeStatement {
+    pub loc: Location,
     pub operand: u32,
     pub op: LocktimeOp,
 }
