@@ -34,32 +34,7 @@ pub Target: Target = {
 }
 
 pub Script: Vec<Statement> = {
-    <mut statement:Statement*> <last:Statement> => {
-        match last {
-            // Pass IfStatement as it contains Script in if(else) block.
-            // Checks the last statment of the script(or script in block).
-            Statement::IfStatement {
-                condition_expr: _,
-                if_block: _,
-                else_block: _,
-            } => (),
-            Statement::ExpressionStatement(_) => (),
-            _ => {
-                panic!("Last statement must be evaluated to value. verify, older, after statements are not allowed");
-            }
-        }
-        for stmt in &statement {
-            match stmt {
-                Statement::ExpressionStatement(_) => {
-                    panic!("Expression statement must be at last. Only verify, older, after statements are allowed.");
-                },
-                _ => ()
-            }
-        }
-
-        statement.push(last);
-        statement
-    },
+    <statement:Statement*> => statement,
 }
 
 pub MutlipleStack: Vec<Vec<StackParam>> = {

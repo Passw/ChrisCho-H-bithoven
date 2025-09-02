@@ -29,4 +29,28 @@ pub fn check_stack(stack_vec: &Vec<Vec<StackParam>>) -> HashMap<String, u32> {
     global_stack_table
 }
 
+pub fn check_stamtement(ast: Vec<Statement>) {
+    match ast.last().unwrap() {
+        // Pass IfStatement as it contains Script in if(else) block.
+        // Checks the last statment of the script(or script in block).
+        Statement::IfStatement {
+            condition_expr: _,
+            if_block: _,
+            else_block: _,
+        } => (),
+        Statement::ExpressionStatement(_) => (),
+        _ => {
+            panic!("Last statement must be evaluated to value. verify, older, after statements are not allowed");
+        }
+    }
+    for stmt in &ast[0..ast.len() - 1] {
+        match stmt {
+            Statement::ExpressionStatement(_) => {
+                panic!("Expression statement must be at last. Only verify, older, after statements are allowed.");
+            }
+            _ => (),
+        }
+    }
+}
+
 pub fn analyze(ast: Vec<Statement>, input: Vec<Vec<StackParam>>, target: &Target) {}
