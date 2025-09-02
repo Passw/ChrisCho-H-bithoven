@@ -71,6 +71,11 @@ pub enum Expression {
     NumberLiteral(i64),
     BooleanLiteral(bool),
     StringLiteral(String),
+    LogicalExpression {
+        lhs: Box<Expression>,
+        op: BinaryLogicalOp,
+        rhs: Box<Expression>,
+    },
     CompareExpression {
         lhs: Box<Expression>,
         op: BinaryCompareOp,
@@ -145,6 +150,12 @@ pub struct ByteExpression {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum BinaryLogicalOp {
+    BoolOr,
+    BoolAnd,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum BinaryCompareOp {
     Equal,
     NotEqual,
@@ -152,8 +163,6 @@ pub enum BinaryCompareOp {
     GreaterOrEqual,
     Less,
     LessOrEqual,
-    BoolOr,
-    BoolAnd,
     NumEqual,
     NumNotEqual,
 }

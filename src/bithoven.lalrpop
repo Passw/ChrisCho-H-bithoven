@@ -119,26 +119,30 @@ ExpressionStatement: Statement = <e:Expression0> <s:SemiColon> => {
     Statement::ExpressionStatement(e)
 };
 
-
 pub Expression0: Expression = {
-    <CompareExpression>,
+    <LogicalExpression>,
     <Expression1>,
 };
 
 pub Expression1: Expression = {
-    <BinaryMathExpression>,
+    <CompareExpression>,
     <Expression2>,
 };
 
 pub Expression2: Expression = {
-    <UnaryMathExpression>,
-    <UnaryCryptoExpression>,
-    <CheckSigExpression>,
-    <ByteExpression>,
+    <BinaryMathExpression>,
     <Expression3>,
 };
 
 pub Expression3: Expression = {
+    <UnaryMathExpression>,
+    <UnaryCryptoExpression>,
+    <CheckSigExpression>,
+    <ByteExpression>,
+    <Expression4>,
+};
+
+pub Expression4: Expression = {
     <Identifier> => Expression::Variable(<>),
     <BooleanLiteral> => Expression::BooleanLiteral(<>),
     <StringLiteral> => Expression::StringLiteral(<>),
@@ -152,10 +156,20 @@ LiteralExpression: LiteralExpression = {
     <NumberLiteral> => LiteralExpression::NumberLiteral(<>),
 }
 
+LogicalExpression: Expression = {
+    <l:Expression0> <c:BinaryLogicalOp> <r:Expression1> => {
+        Expression::LogicalExpression {
+            lhs: Box::new(l),
+            op: c,
+            rhs: Box::new(r),
+        }
+    }
+}
+
 // By separating CmpExpr, you can ensure that boolean operators (&&, ||) only operate on boolean values, 
 // and arithmetic operators (+, -, *, /) only operate on numeric values.
 CompareExpression: Expression = {
-    <l:Expression1> <c:BinaryCompareOp> <r:Expression1> => {
+    <l:Expression2> <c:BinaryCompareOp> <r:Expression2> => {
         Expression::CompareExpression {
             lhs: Box::new(l),
             op: c,
@@ -165,7 +179,7 @@ CompareExpression: Expression = {
 }
 
 UnaryMathExpression: Expression = {
-    <op:UnaryMathOp> <operand:Expression2> => {
+    <op:UnaryMathOp> <operand:Expression3> => {
         Expression::UnaryMathExpression {
             op: op,
             operand: Box::new(operand),
@@ -174,14 +188,14 @@ UnaryMathExpression: Expression = {
 };
 
 BinaryMathExpression: Expression = {
-    <l:Expression1> <op:InfixBinaryMathOp> <r:Expression2> => {
+    <l:Expression2> <op:InfixBinaryMathOp> <r:Expression3> => {
         Expression::BinaryMathExpression {
             lhs: Box::new(l),
             op: op,
             rhs: Box::new(r),
         }
     },
-    <op:PostfixBinaryMathOp> <p1: OpenParen> <l:Expression1> <c: Comma> <r:Expression2> <p2: CloseParen> => {
+    <op:PostfixBinaryMathOp> <p1: OpenParen> <l:Expression2> <c: Comma> <r:Expression3> <p2: CloseParen> => {
         Expression::BinaryMathExpression {
             lhs: Box::new(l),
             op: op,
@@ -191,7 +205,7 @@ BinaryMathExpression: Expression = {
 };
 
 UnaryCryptoExpression: Expression = {
-    <op:UnaryCryptoOp> <operand:Expression2> => {
+    <op:UnaryCryptoOp> <operand:Expression3> => {
         Expression::UnaryCryptoExpression {
             op: op,
             operand: Box::new(operand),
@@ -215,7 +229,7 @@ CheckSigExpression: Expression = {
 }
 
 ByteExpression: Expression = {
-    <op:ByteOp> <operand:Expression2> => {
+    <op:ByteOp> <operand:Expression3> => {
         Expression::ByteExpression {
             op: op,
             operand: Box::new(operand),
@@ -247,6 +261,11 @@ PostfixBinaryMathOp: BinaryMathOp = {
     "min" => BinaryMathOp::Min, // OP_SUB
 }
 
+BinaryLogicalOp: BinaryLogicalOp = {
+    "||" => BinaryLogicalOp::BoolOr, // OP_BOOLOR
+    "&&" => BinaryLogicalOp::BoolAnd, // OP_BOOLAND
+};
+
 BinaryCompareOp: BinaryCompareOp = {
     "==" => BinaryCompareOp::Equal, // OP_EQUAL
     "!=" => BinaryCompareOp::NotEqual, // OP_EQUAL OP_NOT
@@ -254,8 +273,6 @@ BinaryCompareOp: BinaryCompareOp = {
     ">=" => BinaryCompareOp::GreaterOrEqual, // OP_GREATERTHANOREQUAL
     "<"  => BinaryCompareOp::Less, // OP_LESSTHAN
     "<=" => BinaryCompareOp::LessOrEqual, // OP_LESSTHANOREQUAL
-    "||" => BinaryCompareOp::BoolOr, // OP_LESSTHANOREQUAL
-    "&&" => BinaryCompareOp::BoolAnd, // OP_LESSTHANOREQUAL
 };
 
 CheckSigOp: CheckSigOp = {
@@ -348,7 +365,7 @@ MultiSigFactor: Factor = {
 };
 
 SingleSigFactor: SingleSigFactor = {
-    <o: OpenParen> <sig:Expression3> <comma:Comma> <pubkey:Expression3> <c: CloseParen> => {
+    <o: OpenParen> <sig:Expression4> <comma:Comma> <pubkey:Expression4> <c: CloseParen> => {
         SingleSigFactor {
             sig: Box::new(sig),
             pubkey: Box::new(pubkey),

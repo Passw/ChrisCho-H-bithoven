@@ -82,11 +82,29 @@ pub fn push_bytes_len(script: &mut Vec<u8>) {
 }
 
 /*
-    4. Compare push
+    4. Compare push: logical and relational
     - See the top 2 stack item.
     - Pop the top 2 stack item.
     - Push new single stack item.
 */
+
+// OP_BOOLAND, OP_BOOLOR
+pub fn push_logical(script: &mut Vec<u8>, operand: BinaryLogicalOp) {
+    match operand {
+        BinaryLogicalOp::BoolOr => {
+            let builder =
+                bitcoin::script::Builder::new().push_opcode(bitcoin::opcodes::all::OP_BOOLOR);
+
+            script.extend_from_slice(builder.as_bytes());
+        }
+        BinaryLogicalOp::BoolAnd => {
+            let builder =
+                bitcoin::script::Builder::new().push_opcode(bitcoin::opcodes::all::OP_BOOLAND);
+
+            script.extend_from_slice(builder.as_bytes());
+        }
+    }
+}
 
 // OP_EQUAL, OP_BOOLAND, OP_BOOLOR, (OP_NUMEQUAL, OP_NUMNOTEQUAL,)
 // OP_LESSTHAN, OP_GREATERTHAN, OP_LESSTHANOREQUAL, and OP_GREATERTHANOREQUAL.
@@ -126,18 +144,6 @@ pub fn push_compare(script: &mut Vec<u8>, operand: BinaryCompareOp) {
         BinaryCompareOp::LessOrEqual => {
             let builder = bitcoin::script::Builder::new()
                 .push_opcode(bitcoin::opcodes::all::OP_LESSTHANOREQUAL);
-
-            script.extend_from_slice(builder.as_bytes());
-        }
-        BinaryCompareOp::BoolOr => {
-            let builder =
-                bitcoin::script::Builder::new().push_opcode(bitcoin::opcodes::all::OP_BOOLOR);
-
-            script.extend_from_slice(builder.as_bytes());
-        }
-        BinaryCompareOp::BoolAnd => {
-            let builder =
-                bitcoin::script::Builder::new().push_opcode(bitcoin::opcodes::all::OP_BOOLAND);
 
             script.extend_from_slice(builder.as_bytes());
         }
@@ -419,6 +425,15 @@ pub fn compile_expression(bitcoin_script: &mut Vec<u8>, expr: Expression, target
             // To do. need to panic for wrong operand for crypto op
             compile_expression(bitcoin_script, *operand, target);
             push_crypto_unary(bitcoin_script, op);
+        }
+        Expression::LogicalExpression { lhs, op, rhs } => {
+            // recursive to compile condition expression
+            compile_expression(bitcoin_script, *lhs, target);
+            push_to_alt_stack(bitcoin_script);
+            compile_expression(bitcoin_script, *rhs, target);
+            push_from_alt_stack(bitcoin_script);
+            // push logical opcode
+            push_logical(bitcoin_script, op);
         }
         Expression::CompareExpression { lhs, op, rhs } => {
             // recursive to compile condition expression
