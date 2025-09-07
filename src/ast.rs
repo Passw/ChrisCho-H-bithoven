@@ -38,6 +38,8 @@ pub enum Type {
 pub struct Location {
     pub start: usize,
     pub end: usize,
+    pub line: usize,
+    pub column: usize,
 }
 
 #[derive(Clone, Debug, PartialEq)]

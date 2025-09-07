@@ -86,7 +86,7 @@ pub Statement: Statement = {
 IfStatement: Statement = {
     <l:@L> "if" <c:Expression0> <b:BlockStatement> <r:@R> => {
         Statement::IfStatement {
-            loc: Location{start: l, end: r},
+            loc: Location{start: l, end: r, line: 0, column: 0},
             condition_expr: c,
             if_block: b,
             else_block: None,
@@ -94,7 +94,7 @@ IfStatement: Statement = {
     },
     <l:@L> "if" <c:Expression0> <b1:BlockStatement> "else" <b2:BlockStatement> <r:@R> => {
         Statement::IfStatement {
-            loc: Location{start: l, end: r},
+            loc: Location{start: l, end: r, line: 0, column: 0},
             condition_expr: c,
             if_block: b1,
             else_block: Some(b2),
@@ -107,19 +107,19 @@ BlockStatement: Vec<Statement> = "{" <s:Script> "}" => s;
 // Below statements don't produce value(so, not expression), just perform an action.
 LocktimeStatement: Statement = <l:@L> <op:LocktimeOp> <operand:UnsignedInteger> <r:@R> <s:SemiColon> => {
     Statement::LocktimeStatement {
-        loc: Location{start: l, end: r},
+        loc: Location{start: l, end: r, line: 0, column: 0},
         op: op,
         operand: operand as u32
     }
 };
 // Bitcoin specific language sytax. verify signature against public key
 VerifyStatement: Statement = <l:@L> "verify" <e:Expression0> <r:@R> <s:SemiColon> => {
-    Statement::VerifyStatement(Location{start: l, end: r}, e)
+    Statement::VerifyStatement(Location{start: l, end: r, line: 0, column: 0}, e)
 };
 
 // Allow expression statement
 ExpressionStatement: Statement = <l:@L> <e:Expression0> <r:@R> <s:SemiColon> => {
-    Statement::ExpressionStatement(Location{start: l, end: r}, e)
+    Statement::ExpressionStatement(Location{start: l, end: r, line: 0, column: 0}, e)
 };
 
 pub Expression0: Expression = {

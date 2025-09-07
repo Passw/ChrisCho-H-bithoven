@@ -1,15 +1,20 @@
 pub mod analyze;
 pub mod ast;
 pub mod compile;
+pub mod source;
 
 use ast::*;
 use compile::*;
 use lalrpop_util::lalrpop_mod;
 
 use clap::Parser;
+use lalrpop_util::ParseError;
 use serde::Serialize;
 use std::fs;
 use std::path;
+use std::result::Result;
+
+use crate::source::*;
 
 lalrpop_mod!(pub bithoven); // synthesized by LALRPOP
 
@@ -30,12 +35,47 @@ struct BithovenOutput {
     bytes: Vec<u8>,
 }
 
+fn parse(source: String) -> Result<Bithoven, ()> {
+    let line_index = build_line_index(&source);
+    match bithoven::BithovenParser::new().parse(&source) {
+        Ok(mut utxo) => {
+            set_stmt_location(&mut utxo.output_script, &line_index);
+            Ok(utxo)
+        }
+        Err(e) => {
+            // FAILURE PATH: Use the index to report the parse error location.
+            let location = match &e {
+                ParseError::InvalidToken { location } => *location,
+                ParseError::UnrecognizedEof { location, .. } => *location,
+                ParseError::UnrecognizedToken { token, .. } => token.0,
+                ParseError::ExtraToken { token, .. } => token.0,
+                // Handle other error variants...
+                _ => 0,
+            };
+
+            let (line, column) = get_line_and_column(&line_index, location);
+            eprintln!("Syntax Error at line {}, column {}:", line, column);
+            eprintln!(
+                "Invalid Statement: \"{}\"",
+                &source[if line != line_index.len() {
+                    line_index[line - 1]..line_index[line]
+                } else {
+                    line_index[line - 1]..source.len()
+                }]
+                .trim()
+            );
+            eprintln!("{:?}", e);
+            Err(())
+        }
+    }
+}
+
 fn main() {
     let args = Args::parse();
 
-    let bithoven = read_bithoven(&args.path);
+    let source = read_bithoven(&args.path);
     // UTXO: stack + scripts - bitcoin HTLC
-    let utxo: Bithoven = bithoven::BithovenParser::new().parse(&bithoven).unwrap();
+    let utxo: Bithoven = parse(source).unwrap();
 
     let script = compile(utxo.output_script.clone(), &utxo.pragma.target);
 
