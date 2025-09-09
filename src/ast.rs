@@ -180,3 +180,31 @@ pub enum Factor {
         n: Vec<Factor>,
     },
 }
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct CompileError {
+    pub loc: Location,
+    pub kind: ErrorKind,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ErrorKind {
+    // Variable and Scope Errors
+    DuplicateVariable(String),
+    UndefinedVariable(String),
+    VariableConsumed(String),
+    InvalidConsumptionOrder { expected: String, found: String },
+
+    // Type Errors
+    TypeMismatch { expected: Type, found: Type },
+    InvalidOperation { op: Expression, on_type: Type },
+
+    // Bitcoin-Specific Errors
+    StackDepthExceeded { limit: usize, found: usize },
+    OpcodeCountExceeded { limit: usize, path_name: String },
+    DustOutputCreated { path_name: String },
+
+    // Logical Errors
+    UnreachableCode,
+    DeadPath,
+}
