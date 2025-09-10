@@ -111,7 +111,7 @@ VerifyStatement: Statement = <l:@L> "verify" <e:Expression0> <r:@R> <s:SemiColon
 };
 
 // Allow expression statement
-ExpressionStatement: Statement = <l:@L> <e:Expression0> <r:@R> <s:SemiColon> => {
+ExpressionStatement: Statement = <l:@L> "return" <e:Expression0> <r:@R> <s:SemiColon> => {
     Statement::ExpressionStatement(Location{start: l, end: r, line: 0, column: 0}, e)
 };
 
