@@ -204,7 +204,9 @@ pub enum ErrorKind {
     OpcodeCountExceeded { limit: usize, path_name: String },
     DustOutputCreated { path_name: String },
 
-    // Logical Errors
+    // Flow Errors
+    MultipleReturn(String),
+    NoReturn(String),
     UnreachableCode,
     DeadPath,
 }

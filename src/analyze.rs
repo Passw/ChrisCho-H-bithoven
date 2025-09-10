@@ -10,18 +10,9 @@ pub struct Scope {
 
     /// What kind of scope is this? (Global, a conditional branch, a function, etc.)
     pub branch: usize,
-}
 
-/// Defines the kind of block this scope represents. This is crucial for
-/// context-sensitive rules (e.g., a `return` is only valid in a `Function` scope).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ScopeKind {
-    /// The top-level scope of the entire contract.
-    Global,
-
-    /// The scope for a specific conditional branch (e.g., an `if` or `else` block).
-    /// It holds an ID that links it to a specific declared input stack.
-    Branch { path_id: usize },
+    /// The value of being evaluated(returning) in this scope
+    pub return_value: bool,
 }
 
 // Symbol to build symbol table from stack
@@ -76,15 +67,19 @@ pub fn analyze(
     input: Vec<Vec<StackParam>>,
     target: &Target,
 ) -> Result<(), CompileError> {
-    let mut symbol_table_vec: Vec<HashMap<String, Symbol>> = vec![];
-    for stack in input {
-        symbol_table_vec.push(build_symbol_table(&stack)?);
+    let mut scope_vec: Vec<Scope> = vec![];
+    for (branch, stack) in input.iter().enumerate() {
+        scope_vec.push(Scope {
+            symbol_table: build_symbol_table(&stack)?,
+            branch: branch,
+            return_value: false,
+        });
     }
 
-    analyze_statement(ast, &mut symbol_table_vec, target, 0)?;
+    analyze_statement(ast, &mut scope_vec, target, 0)?;
 
-    for symbol_table in symbol_table_vec {
-        println!("symbol: {:?}", symbol_table);
+    for scope in scope_vec {
+        println!("SCOPE: {:?}", scope);
     }
 
     Ok(())
@@ -92,33 +87,41 @@ pub fn analyze(
 
 pub fn analyze_statement(
     ast: Vec<Statement>,
-    symbol_table_vec: &mut Vec<HashMap<String, Symbol>>,
+    scope_vec: &mut Vec<Scope>,
     target: &Target,
     mut branch: usize,
 ) -> Result<usize, CompileError> {
-    for stmt in ast {
-        match stmt {
+    // Check statements in global scope of current branch.
+    for stmt in ast.clone() {
+        match stmt.clone() {
             Statement::LocktimeStatement { loc, operand, op } => {}
             Statement::VerifyStatement(loc, expr) => {
-                check_variable(expr, &mut symbol_table_vec[branch])?
+                check_variable(expr, &mut scope_vec[branch].symbol_table)?
             }
             Statement::ExpressionStatement(loc, expr) => {
-                check_variable(expr, &mut symbol_table_vec[branch])?
+                check_flow(stmt, loc, scope_vec, branch)?;
+                check_variable(expr, &mut scope_vec[branch].symbol_table)?;
             }
+            _ => (),
+        }
+    }
+    // Then recursively goes into if/else.
+    for stmt in ast {
+        match stmt.clone() {
             Statement::IfStatement {
-                loc,
+                loc: _,
                 condition_expr,
                 if_block,
                 else_block,
             } => {
-                check_variable(condition_expr, &mut symbol_table_vec[branch])?;
-                branch = analyze_statement(if_block, symbol_table_vec, target, branch)?;
+                check_variable(condition_expr, &mut scope_vec[branch].symbol_table)?;
+                branch = analyze_statement(if_block, scope_vec, target, branch)?;
                 if else_block.is_some() {
                     branch += 1;
-                    branch =
-                        analyze_statement(else_block.unwrap(), symbol_table_vec, target, branch)?;
+                    branch = analyze_statement(else_block.unwrap(), scope_vec, target, branch)?;
                 }
             }
+            _ => (),
         }
     }
 
@@ -128,6 +131,8 @@ pub fn analyze_statement(
 // Undefined Variable Check
 // Consumed Variable Check
 // Scope Enforcement
+// Unconsumed Variable Check
+// Check order of consumption(stack position)
 pub fn check_variable(
     expression: Expression,
     symbol_table: &mut HashMap<String, Symbol>,
@@ -250,27 +255,38 @@ pub fn check_type(expression: Expression) {}
 
 // Final Statement must be expression statement
 // Unreachable Code Detection
-pub fn check_flow(ast: Vec<Statement>) {
-    match ast.last().unwrap() {
-        // Pass IfStatement as it contains Script in if(else) block.
-        Statement::IfStatement {
-            loc: _,
-            condition_expr: _,
-            if_block: _,
-            else_block: _,
-        } => (),
-        Statement::ExpressionStatement(_, _) => (),
-        _ => {
-            panic!("Last statement must be evaluated to value. verify, older, after statements are not allowed");
-        }
+// No sequential if/else block
+pub fn check_flow(
+    statement: Statement,
+    loc: Location,
+    scope_vec: &mut Vec<Scope>,
+    branch: usize,
+) -> Result<(), CompileError> {
+    if branch != 0 && !scope_vec[branch - 1].return_value {
+        return Err(CompileError {
+            loc: loc,
+            kind: ErrorKind::NoReturn(format!(
+                "Return statement must exist for each possible execution path: {:?}.",
+                statement
+            )),
+        });
     }
-    for stmt in &ast[0..ast.len() - 1] {
-        match stmt {
-            Statement::ExpressionStatement(_, _) => {
-                panic!("Expression statement must be at last. Only verify, older, after statements are allowed.");
+    match statement {
+        Statement::ExpressionStatement(loc, expr) => {
+            if scope_vec[branch].return_value {
+                return Err(CompileError {
+                    loc: loc.clone(),
+                    kind: ErrorKind::MultipleReturn(format!(
+                        "Return statement can be only one for each possible execution path: {:?}.",
+                        expr
+                    )),
+                });
             }
-            _ => (),
+            // mark as returned(as no more return value accepted - only one item can remain after all final evaluation)
+            scope_vec[branch].return_value = true;
+            Ok(())
         }
+        _ => Ok(()),
     }
 }
 
@@ -290,3 +306,17 @@ Example: If targeting Taproot, it must throw an error if the script tries to use
 pub fn check_consensus() {}
 
 pub fn check_fee() {}
+
+/*
+/// Defines the kind of block this scope represents. This is crucial for
+/// context-sensitive rules (e.g., a `return` is only valid in a `Function` scope).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ScopeKind {
+    /// The top-level scope of the entire contract.
+    Global,
+
+    /// The scope for a specific conditional branch (e.g., an `if` or `else` block).
+    /// It holds an ID that links it to a specific declared input stack.
+    Branch { path_id: usize },
+}
+ */
