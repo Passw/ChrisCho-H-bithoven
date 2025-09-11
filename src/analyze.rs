@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::ast::*;
+use crate::source::*;
 
 /// A Scope holds all the contextual information for a single block of code.
 #[derive(Debug, Clone)]
@@ -102,18 +103,24 @@ pub fn analyze_statement(
                 check_flow(stmt, loc, scope_vec, branch)?;
                 check_variable(expr, &mut scope_vec[branch].symbol_table)?;
             }
-            _ => (),
-        }
-    }
-    // Then recursively goes into if/else.
-    for stmt in ast {
-        match stmt.clone() {
             Statement::IfStatement {
-                loc: _,
+                loc,
                 condition_expr,
                 if_block,
                 else_block,
             } => {
+                // Check No statement after if/else block,
+                // as it can be placed before if/else block.
+                let mut last = ast.last().unwrap().to_owned();
+                if last != stmt {
+                    return Err(CompileError {
+                        loc: last.loc_mut().to_owned(),
+                        kind: ErrorKind::UnreachableCode(format!(
+                            "No statement after if/else block but: {:?}.",
+                            last
+                        )),
+                    });
+                }
                 check_variable(condition_expr, &mut scope_vec[branch].symbol_table)?;
                 branch = analyze_statement(if_block, scope_vec, target, branch)?;
                 if else_block.is_some() {
@@ -121,10 +128,8 @@ pub fn analyze_statement(
                     branch = analyze_statement(else_block.unwrap(), scope_vec, target, branch)?;
                 }
             }
-            _ => (),
         }
     }
-
     Ok(branch)
 }
 
@@ -256,6 +261,7 @@ pub fn check_type(expression: Expression) {}
 // Final Statement must be expression statement
 // Unreachable Code Detection
 // No sequential if/else block
+// No statement after if/else block
 pub fn check_flow(
     statement: Statement,
     loc: Location,

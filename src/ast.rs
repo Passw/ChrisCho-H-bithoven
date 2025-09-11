@@ -207,6 +207,6 @@ pub enum ErrorKind {
     // Flow Errors
     MultipleReturn(String),
     NoReturn(String),
-    UnreachableCode,
+    UnreachableCode(String),
     DeadPath,
 }

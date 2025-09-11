@@ -1,6 +1,6 @@
 use crate::ast::*;
 
-trait Locatable {
+pub trait Locatable {
     fn loc_mut(&mut self) -> &mut Location;
 }
 
