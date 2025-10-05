@@ -1,0 +1,144 @@
+/* --- Component-Specific Styles for App.tsx --- */
+
+.ideContainer {
+  width: 90%;
+  max-width: 900px;
+  margin: 2rem auto;
+  background: #1f2937; /* Darker container background */
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  border: 1px solid #374151;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #374151;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.header h1 {
+  font-size: 1.75rem;
+  color: #f9fafb;
+  margin: 0;
+}
+
+.onlineBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #34d399;
+  background-color: rgba(16, 185, 129, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+}
+
+label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #9ca3af;
+  margin-bottom: 0.5rem;
+}
+
+.editorSection, .outputSection {
+  margin-bottom: 1.5rem;
+}
+
+.editor {
+  width: 100%;
+  height: 300px;
+  background-color: #111827;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 1rem;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: #e5e7eb;
+  resize: vertical;
+  box-sizing: border-box; /* Important for padding */
+}
+
+.editor:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
+.compileButton {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: #2563eb;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  margin-bottom: 1.5rem;
+}
+
+.compileButton:hover {
+  background-color: #1d4ed8;
+}
+
+.compileButton:active {
+  transform: scale(0.99);
+}
+
+.output {
+  width: 100%;
+  min-height: 150px;
+  background-color: #111827;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 1rem;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: #d1d5db;
+  white-space: pre-wrap; /* Allows text to wrap */
+  word-wrap: break-word;
+  box-sizing: border-box;
+}
+
+.cm-editor {
+  border-radius: 8px;
+  border: 1px solid #374151;
+  overflow: hidden;
+}
+.cm-editor:focus-within {
+   outline: none;
+   border-color: #3b82f6;
+   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
+/* In app.css */
+
+/* From Lezer Parser */
+/*.cm-identifer { color: #9CDCFE; } /* Light Blue */
+/*.cm-string { color: #CE9178; } /* Orange */
+/*.cm-number { color: #B5CEA8; } /* Green */
+/*.cm-bool { color: #569CD6; }   /* Blue */
+/*.cm-control { color: #C586C0; } /* Purple */
+/*.cm-type { color: #4EC9B0; }
+/*.cm-pragma { color: #C586C0; } /* Purple */
+/*.cm-statement { color: #e762ff; }
+/*.cm-crypto { color: #5fffc7; }
+/*.cm-byte { color: #5fffc7; }
+/*.cm-operation { color: #ff2626; }
+
+
+/* --- Syntax Highlighting --- */
+.cm-string { color: #98c379; }           /* Soft Green */
+.cm-number, .cm-bool { color: #d19a66; } /* Warm Orange */
+.cm-control, .cm-pragma, .cm-statement { color: #c678dd; } /* Soft Purple */
+.cm-type { color: #e5c07b; }             /* Soft Gold */
+.cm-operation { color: #56b6c2; }        /* Cool Cyan */
+.cm-crypto, .cm-byte { color: #61afef; } /* Rich Blue */
+.cm-comment { 
+  color: #7f848e; /* Muted Grey */
+  font-style: italic;
+}
