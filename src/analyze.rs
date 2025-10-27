@@ -582,8 +582,34 @@ pub fn check_type_sig_pubkey(
         }
     };
     // Only string literal can be pubkey.
+    // Public key safety check on ECC.
     match pubkey {
-        Expression::StringLiteral(..) => Ok(()),
+        Expression::StringLiteral(loc, data) => {
+            // Try decoding hex.
+            let hex_pubkey = hex::decode(&data);
+            if hex_pubkey.is_ok() {
+                let pubkey_bytes = hex_pubkey.unwrap();
+
+                // Extract XOnlyPubkey as it could be ECDSA public key.
+                if bitcoin::XOnlyPublicKey::from_slice(
+                    // Check whether prefix is 02 or 03.
+                    if pubkey_bytes.len() == 33 && (pubkey_bytes[0] == 2 || pubkey_bytes[0] == 3) {
+                        &pubkey_bytes[1..]
+                    } else {
+                        &pubkey_bytes
+                    },
+                )
+                .is_ok()
+                {
+                    return Ok(());
+                }
+            }
+
+            Err(CompileError {
+                loc: loc.to_owned(),
+                kind: ErrorKind::TypeMismatch(format!("Public key is malformed: {:?}.", data)),
+            })
+        }
         _ => {
             return Err(CompileError {
                 loc: pubkey.to_owned().loc(),
