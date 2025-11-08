@@ -203,7 +203,6 @@ pub enum ErrorKind {
     // Type Errors
     TypeMismatch(String),
     InvalidOperation(String),
-    IntegerOverflow(String),
 
     // Bitcoin-Specific Errors
     NoSigRequired(String),
@@ -216,6 +215,10 @@ pub enum ErrorKind {
     NoReturn(String),
     UnreachableCode(String),
     DeadPath,
+
+    // Security Errors
+    IntegerOverflow(String),
+    UselessSig(String),
 }
 
 use std::fmt;

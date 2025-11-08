@@ -624,7 +624,10 @@ pub fn check_type_sig_pubkey(
 
 // Any possible vulnerability
 pub fn check_security(expression: &Expression) -> Result<(), CompileError> {
-    check_overflow(expression)
+    check_overflow(expression)?;
+    check_useless_sig(expression)?;
+
+    Ok(())
 }
 
 pub fn check_overflow(expression: &Expression) -> Result<(), CompileError> {
@@ -639,6 +642,26 @@ pub fn check_overflow(expression: &Expression) -> Result<(), CompileError> {
                     kind: ErrorKind::IntegerOverflow(format!(
                         "Number is 32 bit sign magnitude int: {:?}.",
                         val,
+                    )),
+                });
+            }
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
+
+// To do. need to handle more complex useless sig expression.
+pub fn check_useless_sig(expression: &Expression) -> Result<(), CompileError> {
+    match expression.to_owned() {
+        // OP_NOT with OP_CHECKSIG makes sig verification useless.
+        Expression::UnaryMathExpression { loc, operand, op } => {
+            if op == UnaryMathOp::Not && matches!(*operand, Expression::CheckSigExpression { .. }) {
+                return Err(CompileError {
+                    loc: loc,
+                    kind: ErrorKind::UselessSig(format!(
+                        "! makes checksig operation useless: {:?}.",
+                        expression,
                     )),
                 });
             }
