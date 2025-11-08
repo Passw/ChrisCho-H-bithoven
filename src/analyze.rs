@@ -622,10 +622,36 @@ pub fn check_type_sig_pubkey(
     }
 }
 
-// Any possible vulnerability
+// Check any possible vulnerability.
 pub fn check_security(expression: &Expression) -> Result<(), CompileError> {
     check_overflow(expression)?;
     check_useless_sig(expression)?;
+
+    // Recursive check.
+    match expression {
+        Expression::BinaryMathExpression { loc, lhs, op, rhs } => {
+            check_security(&lhs)?;
+            check_security(&rhs)?;
+        }
+        Expression::ByteExpression { loc, operand, op } => {
+            check_security(&operand)?;
+        }
+        Expression::CompareExpression { loc, lhs, op, rhs } => {
+            check_security(&lhs)?;
+            check_security(&rhs)?;
+        }
+        Expression::LogicalExpression { loc, lhs, op, rhs } => {
+            check_security(&lhs)?;
+            check_security(&rhs)?;
+        }
+        Expression::UnaryMathExpression { loc, operand, op } => {
+            check_security(&operand)?;
+        }
+        Expression::UnaryCryptoExpression { loc, operand, op } => {
+            check_security(&operand)?;
+        }
+        _ => (),
+    }
 
     Ok(())
 }
