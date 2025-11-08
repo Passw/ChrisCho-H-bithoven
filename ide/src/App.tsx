@@ -1,9 +1,9 @@
 // App.tsx
-import { useState, useCallback } from 'react';
-import * as bithoven from 'bithoven';
-import CodeMirror from '@uiw/react-codemirror';
-import { customKeywordHighlighting } from './pretty';
-import './App.css';
+import { useState, useCallback } from "react";
+import * as bithoven from "bithoven";
+import CodeMirror from "@uiw/react-codemirror";
+import { customKeywordHighlighting } from "./pretty";
+import "./App.css";
 
 const defaultCode = `pragma bithoven version 0.0.1;
 pragma bithoven target segwit;
@@ -16,19 +16,21 @@ pragma bithoven target segwit;
         return checksig (sig_alice, "0245a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5212");
     } else {
         verify sha256 sha256 preimage == "53de742e2e323e3290234052a702458589c30d2c813bf9f866bef1b651c4e45f";
-        return checksig (sig_bob, "0345a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5211");
+        return checksig (sig_bob, "0345a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5212");
     }
 }
 `;
 
 function App() {
   const [code, setCode] = useState<string>(defaultCode);
-  const [output, setOutput] = useState<string>('Click "Compile & Run" to execute the code.');
+  const [output, setOutput] = useState<string>(
+    'Click "Compile & Run" to execute the code.'
+  );
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleCompile = useCallback(async () => {
     setIsLoading(true);
-    setOutput('Compiling...');
+    setOutput("Compiling...");
 
     try {
       const compiled = bithoven.parse_compile_analyze(code).to_object();
@@ -36,7 +38,8 @@ function App() {
     } catch (error) {
       console.log(error);
       console.error("Execution error:", error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       setOutput(`❌ Error:\n\n${errorMessage}`);
     } finally {
       setIsLoading(false);
@@ -68,7 +71,7 @@ function App() {
           onClick={handleCompile}
           disabled={isLoading}
         >
-          {isLoading ? 'Compiling...' : 'Compile & Run'}
+          {isLoading ? "Compiling..." : "Compile & Run"}
         </button>
 
         <div className="outputSection">
