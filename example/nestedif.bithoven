@@ -1,6 +1,9 @@
 pragma bithoven version 0.0.1;
 pragma bithoven target segwit;
 
+/*
+    This example is to show how complicated nested if/else can be achieved
+*/
 (condition: bool, sig_alice: signature, sig_carol: signature)
 (condition: bool, sig_alice: signature, preimage: string, sig_dylan: signature)
 (condition: bool, preimage: string, sig_bob: signature)
