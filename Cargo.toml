@@ -10,6 +10,13 @@ documentation = "https://docs.rs/bithoven"
 readme = "README.md"
 keywords = ["bitcoin", "compiler", "smart-contracts", "blockchain"]
 categories = ["compilers", "command-line-utilities"]
+exclude = [
+    "ide/**/*",
+    "pkg/**/*",
+    "example/**/*",
+    ".github",
+    ".DS_Store"
+]
 
 [lib]
 name = "bithoven"
