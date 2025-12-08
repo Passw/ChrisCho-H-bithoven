@@ -9,5 +9,5 @@ export default defineConfig({
     wasm(), // Add the wasm plugin
     topLevelAwait(), // Add the top-level-await plugin
   ],
-  base: "/ide/",
+  base: "/bithoven/ide",
 });
