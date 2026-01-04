@@ -1,0 +1,59 @@
+name: Rust / wasm-pack CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test_and_build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 1. Setup Rust Toolchain (Updated to use 'nightly' channel)
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: nightly
+          components: rustfmt
+          targets: wasm32-unknown-unknown
+
+      # 2. Install wasm-pack
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+
+      # 3. Cache dependencies
+      - name: Cache Cargo Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      # 4. Code Formatting Check
+      # Run 'cargo fmt --check' to ensure the code adheres to style guidelines.
+      # This step will fail the workflow if any files need formatting.
+      - name: Check Code Formatting (cargo fmt --check)
+        run: cargo fmt -- --check
+
+      # 5. Standard Cargo Tests
+      - name: Run Cargo Tests
+        run: cargo test
+
+      # 6. wasm-pack Tests for Node.js environment
+      - name: Run wasm-pack Node.js Tests
+        run: wasm-pack test --node
+
+      # 7. Verify Build
+      # Ensures the project actually builds successfully for release.
+      - name: Verify Build
+        run: wasm-pack build
