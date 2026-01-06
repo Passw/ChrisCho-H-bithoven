@@ -58,7 +58,7 @@ pragma bithoven target segwit;
     } else {
         // Redeem Path (Bob)
         // Bob must reveal the secret preimage that hashes to the expected value
-        verify sha256 sha256 preimage == "53de742e2e323e3290234052a702458589c30d2c813bf9f866bef1b651c4e45f";
+        verify sha256(sha256(preimage)) == "53de742e2e323e3290234052a702458589c30d2c813bf9f866bef1b651c4e45f";
 
         // If hash matches, Bob can spend with his signature
         return checksig(sig_bob, "0345a6b3f8eeab8e88501a9a25391318dce9bf35e24c377ee82799543606bf5212");
@@ -113,3 +113,23 @@ Contributions are welcome\! Please check out the [issues](https://github.com/Chr
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](https://github.com/ChrisCho-H/bithoven/blob/main/LICENSE) file for details.
+
+## 📄 Citation
+
+If you use Bithoven in your research, please cite the following paper:
+
+> **Bithoven: Formal Safety for Expressive Bitcoin Smart Contracts.**
+> Hyunhum Cho and Ik Rae Jeong, 2026.
+> arXiv preprint arXiv:2601.01436. https://arxiv.org/abs/2601.01436
+
+**BibTeX:**
+```bibtex
+@misc{bithoven,
+      title={Bithoven: Formal Safety for Expressive Bitcoin Smart Contracts}, 
+      author={Hyunhum Cho and Ik Rae Jeong},
+      year={2026},
+      eprint={2601.01436},
+      archivePrefix={arXiv},
+      primaryClass={cs.CR},
+      url={https://arxiv.org/abs/2601.01436}, 
+}
